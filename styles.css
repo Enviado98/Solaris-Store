@@ -716,8 +716,6 @@ textarea.input { resize: vertical; min-height: 80px; }
   inset: 0;
   z-index: 10000;
   background: transparent;
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -736,7 +734,7 @@ textarea.input { resize: vertical; min-height: 80px; }
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 22px;
+  gap: 0;
 }
 .logout-hex-wrap {
   position: relative;
@@ -745,18 +743,23 @@ textarea.input { resize: vertical; min-height: 80px; }
   display: flex;
   align-items: center;
   justify-content: center;
+  /* Blur localizado solo alrededor del icono */
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-radius: 50%;
+  padding: 18px;
 }
 .logout-hex {
   width: 40px;
   height: 40px;
-  color: #fff;
+  color: #c27a00;
   animation: logoutSpin 2.2s ease-in-out infinite, logoutGlow 2.2s ease-in-out infinite;
 }
 .logout-label {
   display: none;
 }
 
-/* Animación: giro + resplandor blanco tenue → intenso */
+/* Animación: giro + resplandor dorado tenue → intenso */
 @keyframes logoutSpin {
   0%   { transform: rotate(0deg)   scale(1);    opacity: 1; }
   25%  { transform: rotate(180deg) scale(1.35); opacity: 0.85; }
@@ -765,9 +768,9 @@ textarea.input { resize: vertical; min-height: 80px; }
   100% { transform: rotate(0deg)   scale(1);    opacity: 1; }
 }
 @keyframes logoutGlow {
-  0%   { filter: drop-shadow(0 0 4px rgba(255,255,255,0.2))  drop-shadow(0 0 8px rgba(255,255,255,0.1)); }
-  50%  { filter: drop-shadow(0 0 16px rgba(255,255,255,0.95)) drop-shadow(0 0 32px rgba(255,255,255,0.6)); }
-  100% { filter: drop-shadow(0 0 4px rgba(255,255,255,0.2))  drop-shadow(0 0 8px rgba(255,255,255,0.1)); }
+  0%   { filter: drop-shadow(0 0 3px rgba(194,122,0,0.2))  drop-shadow(0 0 6px rgba(194,122,0,0.1)); }
+  50%  { filter: drop-shadow(0 0 14px rgba(194,122,0,1))   drop-shadow(0 0 28px rgba(245,158,11,0.7)); }
+  100% { filter: drop-shadow(0 0 3px rgba(194,122,0,0.2))  drop-shadow(0 0 6px rgba(194,122,0,0.1)); }
 }
 
 /* Botón logout al dispararse */
