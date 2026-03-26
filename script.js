@@ -39,26 +39,26 @@ async function generateNonce() {
   return [rawHex, hashHex];
 }
 
+let _oneTapNonce = null;
+
 // Callback global que Google llama cuando el usuario acepta el One Tap
 window.handleOneTap = async (response) => {
-  const nonceRaw = sessionStorage.getItem('onetap_nonce');
   const { data, error } = await db.auth.signInWithIdToken({
     provider: 'google',
     token: response.credential,
-    nonce: nonceRaw ?? undefined,
+    nonce: _oneTapNonce,
   });
   if (error) {
     console.error('One Tap error:', error);
     // No mostrar error en UI — One Tap es silencioso
   }
-  sessionStorage.removeItem('onetap_nonce');
   // Si va bien, onAuthStateChange dispara SIGNED_IN automaticamente
 };
 
 async function initOneTap() {
   if (!window.google?.accounts?.id) return;
   const [nonceRaw, nonceHashed] = await generateNonce();
-  sessionStorage.setItem('onetap_nonce', nonceRaw);
+  _oneTapNonce = nonceRaw;
   google.accounts.id.initialize({
     client_id: GOOGLE_CLIENT_ID,
     callback: window.handleOneTap,
@@ -585,12 +585,7 @@ function showView(name) {
 function showAuthView() {
   document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
   document.getElementById('view-auth').classList.add('active');
-  // Mostrar One Tap cuando la librería de Google esté lista
-  if (window.google?.accounts?.id) {
-    initOneTap();
-  } else {
-    window.onGoogleLibraryLoad = initOneTap;
-  }
+  // One Tap desactivado — se usa solo el botón OAuth manual
 }
 
 function switchTab(tabsSelector, contentsSelector, tabId, prefix = '') {
