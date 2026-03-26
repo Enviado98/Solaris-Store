@@ -100,7 +100,7 @@ async function handleLogin(user) {
   currentUser = user;
 
   // Mostrar UI inmediatamente sin esperar fetches
-  ['nav-balance', 'nav-logout-btn', 'nav-cart-btn'].forEach(id =>
+  ['nav-balance', 'nav-logout-btn', 'nav-cart-btn', 'nav-menu-btn'].forEach(id =>
     document.getElementById(id).classList.remove('hidden')
   );
   document.getElementById('bottom-nav').classList.remove('hidden');
@@ -155,9 +155,10 @@ function hideLogoutScreen() {
 function handleLogout() {
   currentUser = currentProfile = currentWallet = null;
   cart = []; saveCart();
-  ['nav-balance','nav-logout-btn','nav-cart-btn','nav-admin-btn'].forEach(id =>
+  ['nav-balance','nav-logout-btn','nav-cart-btn','nav-admin-btn','nav-menu-btn'].forEach(id =>
     document.getElementById(id).classList.add('hidden')
   );
+  closeNavPanel();
   document.getElementById('bottom-nav').classList.add('hidden');
   showAuthView();
 }
@@ -174,6 +175,21 @@ async function fetchWallet(uid) {
 // ══════════════════════════════════════════════════
 //  EVENTS
 // ══════════════════════════════════════════════════
+// ── Nav panel helpers ─────────────────────────
+function openNavPanel() {
+  document.getElementById('nav-panel').classList.add('open');
+  document.getElementById('nav-menu-btn').classList.add('open');
+}
+function closeNavPanel() {
+  document.getElementById('nav-panel').classList.remove('open');
+  const btn = document.getElementById('nav-menu-btn');
+  if (btn) btn.classList.remove('open');
+}
+function toggleNavPanel() {
+  const panel = document.getElementById('nav-panel');
+  panel.classList.contains('open') ? closeNavPanel() : openNavPanel();
+}
+
 function setupEvents() {
   // ── Auth tabs
   document.querySelectorAll('.auth-tabs .tab-btn').forEach(btn => {
@@ -213,6 +229,7 @@ function setupEvents() {
 
   // ── Logout
   document.getElementById('nav-logout-btn').addEventListener('click', async () => {
+    closeNavPanel();
     window._manualLogout = true;
     showLogoutScreen();
     // Timeout de 4s: si Supabase no responde, logout local forzado
@@ -251,12 +268,37 @@ function setupEvents() {
     );
   });
 
-  // ── Nav cart + admin
-  document.getElementById('nav-cart-btn').addEventListener('click', () => showView('cart'));
+  // ── Hamburger menu
+  document.getElementById('nav-menu-btn').addEventListener('click', (e) => {
+    e.stopPropagation();
+    toggleNavPanel();
+  });
+
+  // ── Nav panel: Mi Cuenta
+  document.getElementById('nav-account-btn').addEventListener('click', () => {
+    closeNavPanel();
+    // Listo para recibir lógica de perfil
+  });
+
+  // ── Nav cart + admin (close panel on navigate)
+  document.getElementById('nav-cart-btn').addEventListener('click', () => {
+    closeNavPanel();
+    showView('cart');
+  });
   document.getElementById('nav-admin-btn').addEventListener('click', () => {
+    closeNavPanel();
     showView('admin');
     loadAdminProducts();
     loadAdminUsers();
+  });
+
+  // ── Close panel when clicking outside
+  document.addEventListener('click', (e) => {
+    const panel = document.getElementById('nav-panel');
+    const menuBtn = document.getElementById('nav-menu-btn');
+    if (panel && menuBtn && !panel.contains(e.target) && !menuBtn.contains(e.target)) {
+      closeNavPanel();
+    }
   });
 
   // ── Service cards
