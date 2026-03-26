@@ -100,7 +100,7 @@ async function handleLogin(user) {
   currentUser = user;
 
   // Mostrar UI inmediatamente sin esperar fetches
-  ['nav-balance', 'nav-logout-btn', 'nav-cart-btn', 'nav-menu-btn'].forEach(id =>
+  ['nav-balance', 'nav-logout-btn', 'nav-cart-btn', 'nav-menu-btn', 'nav-account-btn'].forEach(id =>
     document.getElementById(id).classList.remove('hidden')
   );
   document.getElementById('bottom-nav').classList.remove('hidden');
@@ -155,7 +155,7 @@ function hideLogoutScreen() {
 function handleLogout() {
   currentUser = currentProfile = currentWallet = null;
   cart = []; saveCart();
-  ['nav-balance','nav-logout-btn','nav-cart-btn','nav-admin-btn','nav-menu-btn'].forEach(id =>
+  ['nav-balance','nav-logout-btn','nav-cart-btn','nav-admin-btn','nav-menu-btn','nav-account-btn'].forEach(id =>
     document.getElementById(id).classList.add('hidden')
   );
   closeNavPanel();
@@ -681,4 +681,3 @@ function friendlyError(msg) {
   if (msg.includes('User already registered')) return 'Este correo ya está registrado';
   return msg;
 }
-
