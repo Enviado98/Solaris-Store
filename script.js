@@ -123,22 +123,27 @@ window.addEventListener('DOMContentLoaded', async () => {
 // ══════════════════════════════════════════════════
 async function handleLogin(user) {
   cancelOneTap(); // cerrar el popup de One Tap si sigue visible
-  currentUser    = user;
-  currentProfile = await fetchProfile(user.id);
-  currentWallet  = await fetchWallet(user.id);
+  currentUser = user;
 
-  // Show authenticated UI
+  // Mostrar UI inmediatamente sin esperar fetches
   ['nav-balance', 'nav-logout-btn', 'nav-cart-btn'].forEach(id =>
     document.getElementById(id).classList.remove('hidden')
   );
-  if (currentProfile?.is_admin)
-    document.getElementById('nav-admin-btn').classList.remove('hidden');
-
   document.getElementById('bottom-nav').classList.remove('hidden');
-  syncBalanceUI();
-  syncCartCount();
   showView('catalog');
   loadProducts();
+
+  // Cargar profile y wallet en paralelo en segundo plano
+  [currentProfile, currentWallet] = await Promise.all([
+    fetchProfile(user.id),
+    fetchWallet(user.id),
+  ]);
+
+  // Actualizar UI con los datos ya cargados
+  if (currentProfile?.is_admin)
+    document.getElementById('nav-admin-btn').classList.remove('hidden');
+  syncBalanceUI();
+  syncCartCount();
 }
 
 // ── Logout screen helpers
