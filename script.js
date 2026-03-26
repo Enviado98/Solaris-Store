@@ -681,3 +681,52 @@ function friendlyError(msg) {
   if (msg.includes('User already registered')) return 'Este correo ya está registrado';
   return msg;
 }
+
+// ─── Logo scroll rotation ───────────────────────
+(function () {
+  let rotation    = 0;
+  let lastScrollY = window.scrollY;
+  let stopTimer   = null;
+  let pulsing     = false;
+  const SVG_SPEED = 0.18; // grados por pixel de scroll
+
+  const logoSvg = () => document.querySelector('.nav-logo svg');
+
+  function applyRotation(deg) {
+    const el = logoSvg();
+    if (!el) return;
+    el.style.setProperty('--logo-rot', deg + 'deg');
+    el.style.transform = `rotate(${deg}deg) scale(1)`;
+  }
+
+  function triggerPulse() {
+    const el = logoSvg();
+    if (!el || pulsing) return;
+    pulsing = true;
+    el.style.transition = 'none';
+    el.style.setProperty('--logo-rot', rotation + 'deg');
+    el.classList.remove('logo-pulse');
+    // force reflow
+    void el.offsetWidth;
+    el.classList.add('logo-pulse');
+    setTimeout(() => {
+      el.classList.remove('logo-pulse');
+      el.style.transition = 'transform 0.08s linear';
+      applyRotation(rotation);
+      pulsing = false;
+    }, 460);
+  }
+
+  window.addEventListener('scroll', () => {
+    const currentY = window.scrollY;
+    const delta    = currentY - lastScrollY;
+    lastScrollY    = currentY;
+
+    rotation += delta * SVG_SPEED;
+
+    if (!pulsing) applyRotation(rotation);
+
+    clearTimeout(stopTimer);
+    stopTimer = setTimeout(triggerPulse, 180);
+  }, { passive: true });
+})();
