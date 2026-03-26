@@ -39,26 +39,26 @@ async function generateNonce() {
   return [rawHex, hashHex];
 }
 
-let _oneTapNonce = null;
-
 // Callback global que Google llama cuando el usuario acepta el One Tap
 window.handleOneTap = async (response) => {
+  const nonceRaw = sessionStorage.getItem('onetap_nonce');
   const { data, error } = await db.auth.signInWithIdToken({
     provider: 'google',
     token: response.credential,
-    nonce: _oneTapNonce,
+    nonce: nonceRaw ?? undefined,
   });
   if (error) {
     console.error('One Tap error:', error);
-    setMsg('auth-msg', 'Error al iniciar sesión con Google', 'error');
+    // No mostrar error en UI — One Tap es silencioso
   }
+  sessionStorage.removeItem('onetap_nonce');
   // Si va bien, onAuthStateChange dispara SIGNED_IN automaticamente
 };
 
 async function initOneTap() {
   if (!window.google?.accounts?.id) return;
   const [nonceRaw, nonceHashed] = await generateNonce();
-  _oneTapNonce = nonceRaw;
+  sessionStorage.setItem('onetap_nonce', nonceRaw);
   google.accounts.id.initialize({
     client_id: GOOGLE_CLIENT_ID,
     callback: window.handleOneTap,
@@ -589,7 +589,6 @@ function showAuthView() {
   if (window.google?.accounts?.id) {
     initOneTap();
   } else {
-    // Si la librería aún no cargó (primera vez), esperar a que cargue
     window.onGoogleLibraryLoad = initOneTap;
   }
 }
