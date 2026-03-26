@@ -91,6 +91,40 @@ async function handleLogin(user) {
   loadProducts();
 }
 
+// ── Logout screen helpers
+function showLogoutScreen() {
+  let screen = document.getElementById('logout-screen');
+  if (!screen) {
+    screen = document.createElement('div');
+    screen.id = 'logout-screen';
+    screen.innerHTML = `
+      <div class="logout-inner">
+        <div class="logout-hex-wrap">
+          <svg class="logout-hex" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round">
+            <polygon points="12,2 21,7 21,17 12,22 3,17 3,7"/>
+          </svg>
+        </div>
+        <div class="logout-label">Cerrando sesión...</div>
+      </div>`;
+    document.body.appendChild(screen);
+  }
+  // Marcar botón de logout en rojo
+  const btn = document.getElementById('nav-logout-btn');
+  if (btn) btn.classList.add('logout-active');
+  // Mostrar pantalla
+  requestAnimationFrame(() => {
+    screen.classList.remove('hidden');
+    screen.classList.add('visible');
+  });
+}
+
+function hideLogoutScreen() {
+  const screen = document.getElementById('logout-screen');
+  if (screen) { screen.classList.remove('visible'); screen.classList.add('hidden'); }
+  const btn = document.getElementById('nav-logout-btn');
+  if (btn) btn.classList.remove('logout-active');
+}
+
 function handleLogout() {
   currentUser = currentProfile = currentWallet = null;
   cart = []; saveCart();
@@ -151,7 +185,13 @@ function setupEvents() {
   });
 
   // ── Logout
-  document.getElementById('nav-logout-btn').addEventListener('click', () => db.auth.signOut());
+  document.getElementById('nav-logout-btn').addEventListener('click', async () => {
+    showLogoutScreen();
+    try { await db.auth.signOut(); } catch (e) { /* forzamos logout local si signOut falla */ }
+    await new Promise(r => setTimeout(r, 1900));
+    hideLogoutScreen();
+    handleLogout();
+  });
 
   // ── Google sign-in
   document.getElementById('google-btn').addEventListener('click', async () => {

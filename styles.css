@@ -709,3 +709,77 @@ textarea.input { resize: vertical; min-height: 80px; }
   background: #f8f9fa;
   box-shadow: 0 1px 6px rgba(0,0,0,0.2);
 }
+
+/* ── LOGOUT SCREEN ─────────────────────────────── */
+#logout-screen {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  background: rgba(180, 30, 30, 0.92);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.35s ease;
+  pointer-events: none;
+}
+#logout-screen.visible {
+  opacity: 1;
+  pointer-events: all;
+}
+#logout-screen.hidden {
+  display: none;
+}
+.logout-inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 22px;
+}
+.logout-hex-wrap {
+  position: relative;
+  width: 80px;
+  height: 80px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.logout-hex {
+  width: 80px;
+  height: 80px;
+  color: #fff;
+  animation: logoutSpin 2.2s ease-in-out infinite;
+  filter: drop-shadow(0 0 18px rgba(255,255,255,0.5));
+}
+.logout-label {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 0.85rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  color: #fff;
+  opacity: 0.9;
+  animation: logoutPulse 2.2s ease-in-out infinite;
+}
+
+/* Animación: giro → contragiro → escala → repite */
+@keyframes logoutSpin {
+  0%   { transform: rotate(0deg)   scale(1);    opacity: 1; }
+  25%  { transform: rotate(180deg) scale(1.35); opacity: 0.85; }
+  50%  { transform: rotate(180deg) scale(1.35); opacity: 1; }
+  75%  { transform: rotate(0deg)   scale(1);    opacity: 0.85; }
+  100% { transform: rotate(0deg)   scale(1);    opacity: 1; }
+}
+@keyframes logoutPulse {
+  0%, 100% { opacity: 0.7; }
+  50%       { opacity: 1;   }
+}
+
+/* Botón logout al dispararse */
+.btn-icon.logout-active {
+  border-color: #e53935 !important;
+  color: #e53935 !important;
+  background: rgba(229,57,53,0.12) !important;
+  transition: border-color 0.2s, color 0.2s, background 0.2s;
+}
