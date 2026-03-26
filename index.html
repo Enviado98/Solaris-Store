@@ -79,22 +79,48 @@
         SOLARIS
       </div>
       <div class="nav-actions">
-        <div id="nav-balance" class="nav-balance hidden">
-          <svg width="14" height="14"><use href="#ico-wallet"/></svg>
-          $<span id="balance-amount">0.00</span>
-        </div>
-        <button id="nav-cart-btn" class="btn-icon hidden">
-          <svg width="16" height="16"><use href="#ico-cart"/></svg>
-          <span id="cart-count">0</span>
-        </button>
-        <button id="nav-admin-btn" class="btn-icon hidden" title="Admin">
-          <svg width="16" height="16"><use href="#ico-settings"/></svg>
-        </button>
-        <button id="nav-logout-btn" class="btn-icon hidden">
-          <svg width="16" height="16"><use href="#ico-logout"/></svg>
+        <button id="nav-menu-btn" class="btn-hamburger hidden" aria-label="Menú">
+          <span></span><span></span><span></span>
         </button>
       </div>
     </nav>
+
+    <!-- PANEL DESPLEGABLE -->
+    <div id="nav-panel" class="nav-panel">
+      <div class="nav-panel-inner">
+
+        <div id="nav-balance" class="nav-panel-balance hidden">
+          <svg width="14" height="14"><use href="#ico-wallet"/></svg>
+          <span>Balance: $<span id="balance-amount">0.00</span></span>
+        </div>
+
+        <button id="nav-account-btn" class="nav-panel-item">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/>
+          </svg>
+          Mi Cuenta
+        </button>
+
+        <button id="nav-cart-btn" class="nav-panel-item hidden">
+          <svg width="15" height="15"><use href="#ico-cart"/></svg>
+          Carrito
+          <span id="cart-count" class="nav-panel-badge">0</span>
+        </button>
+
+        <button id="nav-admin-btn" class="nav-panel-item hidden">
+          <svg width="15" height="15"><use href="#ico-settings"/></svg>
+          Admin
+        </button>
+
+        <div class="nav-panel-sep"></div>
+
+        <button id="nav-logout-btn" class="nav-panel-item nav-panel-logout hidden">
+          <svg width="15" height="15"><use href="#ico-logout"/></svg>
+          Cerrar Sesión
+        </button>
+
+      </div>
+    </div>
 
     <!-- MAIN VIEWS -->
     <main id="main">
