@@ -305,6 +305,7 @@ function setupEvents() {
   // Para añadir más: solo agrega el botón en HTML y la entrada en CAT_MAP
   document.querySelectorAll('.svc-card').forEach(card =>
     card.addEventListener('click', () => {
+      if (window._triggerLogoPulse) window._triggerLogoPulse();
       const svcKey = card.dataset.cat;
       currentCat = svcKey;           // filtra por key del servicio
       const name = card.querySelector('.svc-name').textContent;
@@ -682,51 +683,52 @@ function friendlyError(msg) {
   return msg;
 }
 
-// ─── Logo scroll rotation ───────────────────────
+// ─── Logo pulse on card tap (no scroll rotation) ───
 (function () {
-  let rotation    = 0;
-  let lastScrollY = window.scrollY;
-  let stopTimer   = null;
-  let pulsing     = false;
-  const SVG_SPEED = 0.18; // grados por pixel de scroll
+  let pulsing = false;
 
   const logoSvg = () => document.querySelector('.nav-logo svg');
-
-  function applyRotation(deg) {
-    const el = logoSvg();
-    if (!el) return;
-    el.style.setProperty('--logo-rot', deg + 'deg');
-    el.style.transform = `rotate(${deg}deg) scale(1)`;
-  }
 
   function triggerPulse() {
     const el = logoSvg();
     if (!el || pulsing) return;
     pulsing = true;
-    el.style.transition = 'none';
-    el.style.setProperty('--logo-rot', rotation + 'deg');
     el.classList.remove('logo-pulse');
-    // force reflow
     void el.offsetWidth;
     el.classList.add('logo-pulse');
     setTimeout(() => {
       el.classList.remove('logo-pulse');
-      el.style.transition = 'transform 0.08s linear';
-      applyRotation(rotation);
       pulsing = false;
     }, 460);
   }
 
-  window.addEventListener('scroll', () => {
-    const currentY = window.scrollY;
-    const delta    = currentY - lastScrollY;
-    lastScrollY    = currentY;
-
-    rotation += delta * SVG_SPEED;
-
-    if (!pulsing) applyRotation(rotation);
-
-    clearTimeout(stopTimer);
-    stopTimer = setTimeout(triggerPulse, 180);
-  }, { passive: true });
+  // Expose for card tap usage
+  window._triggerLogoPulse = triggerPulse;
 })();
+
+// ─── SOLARIS wave animation every 17s ───────────────
+(function () {
+  const INTERVAL_MS = 17000;
+  const LETTER_DELAY = 180; // ms between each letter start
+  // Total animation = 7 letters * 180ms stagger + 290ms last letter = ~1550ms < 2s ✓
+
+  function runWave() {
+    const letters = document.querySelectorAll('.solaris-brand span');
+    if (!letters.length) return;
+    letters.forEach((span, i) => {
+      setTimeout(() => {
+        span.classList.remove('wave-pop');
+        void span.offsetWidth; // reflow
+        span.classList.add('wave-pop');
+        setTimeout(() => span.classList.remove('wave-pop'), 320);
+      }, i * LETTER_DELAY);
+    });
+  }
+
+  // Start after a short initial delay, then every 17s
+  setTimeout(() => {
+    runWave();
+    setInterval(runWave, INTERVAL_MS);
+  }, 3000);
+})();
+

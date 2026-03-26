@@ -16,7 +16,7 @@
   --danger:     #e0284a;
   --success:    #12a882;
   --radius:     13px;
-  --nav-h:      58px;
+  --nav-h:      70px;
   --bot-h:      66px;
 }
 
@@ -144,10 +144,10 @@ body::before {
   48%  { opacity: 0; }
   100% { left: 140%; opacity: 0; }
 }
-.nav-logo { display: flex; align-items: center; gap: 7px;
+.nav-logo { display: flex; align-items: center; gap: 8px;
   font-family: 'Orbitron', sans-serif;
   font-weight: 900;
-  font-size: 1rem;
+  font-size: 1.15rem;
   color: #7a4800;
   letter-spacing: 0.1em;
   text-shadow: 0 1px 0 rgba(255,255,255,0.6);
@@ -156,6 +156,26 @@ body::before {
   transform-origin: center;
   transition: transform 0.08s linear;
   will-change: transform;
+}
+
+/* SOLARIS brand letter wave */
+.solaris-brand {
+  display: inline-flex;
+  gap: 0;
+  letter-spacing: 0.1em;
+}
+.solaris-brand span {
+  display: inline-block;
+  transform-origin: center bottom;
+  transition: none;
+}
+.solaris-brand span.wave-pop {
+  animation: letterWave 0.29s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+@keyframes letterWave {
+  0%   { transform: scale(1)    translateY(0); }
+  40%  { transform: scale(1.28) translateY(-3px); }
+  100% { transform: scale(1)    translateY(0); }
 }
 .nav-logo svg.logo-pulse {
   animation: logoPulse 0.45s cubic-bezier(0.34,1.56,0.64,1) forwards;
