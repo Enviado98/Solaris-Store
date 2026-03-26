@@ -772,9 +772,6 @@ textarea.input { resize: vertical; min-height: 80px; }
   display: flex;
   align-items: center;
   justify-content: center;
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border-radius: 50%;
 }
 .logout-hex {
   width: 56px;
