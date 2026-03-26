@@ -8,7 +8,7 @@ const SUPABASE_URL      = 'https://vwcwqljwojstyxfrvxcf.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ3Y3dxbGp3b2pzdHl4ZnJ2eGNmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ0NzQ3NTYsImV4cCI6MjA5MDA1MDc1Nn0.uMyit3TrGq9VjKl9a_mMwafSUkepymU4Fax15ZmscmM';
 
 // ⚠️ Reemplaza esto con tu Google Client ID (lo encuentras en Google Cloud Console)
-const GOOGLE_CLIENT_ID  = 'GOOGLE_CLIENT_ID_PLACEHOLDER';
+const GOOGLE_CLIENT_ID  = '243529116303-r4t75out47hhph4ku94bmh9mmmlrbn8b.apps.googleusercontent.com';
 
 // ← Cambia esto por tu número de WhatsApp (con código de país, sin + ni espacios)
 const WA_NUMBER = '521234567890';
