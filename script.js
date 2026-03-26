@@ -7,6 +7,9 @@
 const SUPABASE_URL      = 'https://vwcwqljwojstyxfrvxcf.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ3Y3dxbGp3b2pzdHl4ZnJ2eGNmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ0NzQ3NTYsImV4cCI6MjA5MDA1MDc1Nn0.uMyit3TrGq9VjKl9a_mMwafSUkepymU4Fax15ZmscmM';
 
+// ⚠️ Reemplaza esto con tu Google Client ID (lo encuentras en Google Cloud Console)
+const GOOGLE_CLIENT_ID  = 'GOOGLE_CLIENT_ID_PLACEHOLDER';
+
 // ← Cambia esto por tu número de WhatsApp (con código de país, sin + ni espacios)
 const WA_NUMBER = '521234567890';
 
@@ -24,6 +27,36 @@ const CAT_EMOJI = {
 // ─── Supabase client ───────────────────────────
 const { createClient } = window.supabase;
 const db = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+// ─── Google One Tap ────────────────────────────
+// Callback global que Google llama cuando el usuario acepta el One Tap
+window.handleOneTap = async (response) => {
+  const { data, error } = await db.auth.signInWithIdToken({
+    provider: 'google',
+    token: response.credential,
+  });
+  if (error) {
+    console.error('One Tap error:', error);
+    setMsg('auth-msg', 'Error al iniciar sesión con Google', 'error');
+  }
+  // Si va bien, onAuthStateChange dispara SIGNED_IN automáticamente
+};
+
+function initOneTap() {
+  if (!window.google?.accounts?.id) return;
+  google.accounts.id.initialize({
+    client_id: GOOGLE_CLIENT_ID,
+    callback: window.handleOneTap,
+    auto_select: true,
+    cancel_on_tap_outside: false,
+    context: 'signin',
+  });
+  google.accounts.id.prompt();
+}
+
+function cancelOneTap() {
+  if (window.google?.accounts?.id) google.accounts.id.cancel();
+}
 
 // ─── State ─────────────────────────────────────
 let currentUser    = null;
@@ -73,6 +106,7 @@ window.addEventListener('DOMContentLoaded', async () => {
 //  AUTH
 // ══════════════════════════════════════════════════
 async function handleLogin(user) {
+  cancelOneTap(); // cerrar el popup de One Tap si sigue visible
   currentUser    = user;
   currentProfile = await fetchProfile(user.id);
   currentWallet  = await fetchWallet(user.id);
@@ -535,6 +569,13 @@ function showView(name) {
 function showAuthView() {
   document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
   document.getElementById('view-auth').classList.add('active');
+  // Mostrar One Tap cuando la librería de Google esté lista
+  if (window.google?.accounts?.id) {
+    initOneTap();
+  } else {
+    // Si la librería aún no cargó (primera vez), esperar a que cargue
+    window.onGoogleLibraryLoad = initOneTap;
+  }
 }
 
 function switchTab(tabsSelector, contentsSelector, tabId, prefix = '') {
