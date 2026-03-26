@@ -709,8 +709,7 @@ function friendlyError(msg) {
 // ─── SOLARIS wave animation every 17s ───────────────
 (function () {
   const INTERVAL_MS = 17000;
-  const LETTER_DELAY = 180; // ms between each letter start
-  // Total animation = 7 letters * 180ms stagger + 290ms last letter = ~1550ms < 2s ✓
+  const LETTER_DELAY = 140; // ms between each letter — smooth wave flow
 
   function runWave() {
     const letters = document.querySelectorAll('.solaris-brand span');
@@ -718,9 +717,9 @@ function friendlyError(msg) {
     letters.forEach((span, i) => {
       setTimeout(() => {
         span.classList.remove('wave-pop');
-        void span.offsetWidth; // reflow
+        void span.offsetWidth;
         span.classList.add('wave-pop');
-        setTimeout(() => span.classList.remove('wave-pop'), 320);
+        setTimeout(() => span.classList.remove('wave-pop'), 400);
       }, i * LETTER_DELAY);
     });
   }
