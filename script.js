@@ -29,24 +29,42 @@ const { createClient } = window.supabase;
 const db = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 // ─── Google One Tap ────────────────────────────
+
+// Genera un nonce aleatorio y devuelve [nonce_raw, nonce_hashed_base64]
+async function generateNonce() {
+  const raw = crypto.getRandomValues(new Uint8Array(32));
+  const rawStr = String.fromCharCode(...raw);
+  const b64 = btoa(rawStr);
+  const hash = await crypto.subtle.digest('SHA-256', raw);
+  const hashArr = Array.from(new Uint8Array(hash));
+  const hashB64 = btoa(String.fromCharCode(...hashArr));
+  return [b64, hashB64];
+}
+
+let _oneTapNonce = null;
+
 // Callback global que Google llama cuando el usuario acepta el One Tap
 window.handleOneTap = async (response) => {
   const { data, error } = await db.auth.signInWithIdToken({
     provider: 'google',
     token: response.credential,
+    nonce: _oneTapNonce,
   });
   if (error) {
     console.error('One Tap error:', error);
     setMsg('auth-msg', 'Error al iniciar sesión con Google', 'error');
   }
-  // Si va bien, onAuthStateChange dispara SIGNED_IN automáticamente
+  // Si va bien, onAuthStateChange dispara SIGNED_IN automaticamente
 };
 
-function initOneTap() {
+async function initOneTap() {
   if (!window.google?.accounts?.id) return;
+  const [nonceRaw, nonceHashed] = await generateNonce();
+  _oneTapNonce = nonceRaw;
   google.accounts.id.initialize({
     client_id: GOOGLE_CLIENT_ID,
     callback: window.handleOneTap,
+    nonce: nonceHashed,
     auto_select: true,
     cancel_on_tap_outside: false,
     context: 'signin',
