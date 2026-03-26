@@ -7,8 +7,7 @@
 const SUPABASE_URL      = 'https://vwcwqljwojstyxfrvxcf.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ3Y3dxbGp3b2pzdHl4ZnJ2eGNmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ0NzQ3NTYsImV4cCI6MjA5MDA1MDc1Nn0.uMyit3TrGq9VjKl9a_mMwafSUkepymU4Fax15ZmscmM';
 
-// ⚠️ Reemplaza esto con tu Google Client ID (lo encuentras en Google Cloud Console)
-const GOOGLE_CLIENT_ID  = '243529116303-r4t75out47hhph4ku94bmh9mmmlrbn8b.apps.googleusercontent.com';
+
 
 // ← Cambia esto por tu número de WhatsApp (con código de país, sin + ni espacios)
 const WA_NUMBER = '521234567890';
@@ -49,51 +48,6 @@ const CAT_MAP = {
 const { createClient } = window.supabase;
 const db = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-// ─── Google One Tap ────────────────────────────
-
-// Genera un nonce: devuelve [nonce_hex_raw, nonce_hex_hashed]
-async function generateNonce() {
-  const raw = crypto.getRandomValues(new Uint8Array(32));
-  const rawHex = Array.from(raw).map(b => b.toString(16).padStart(2, '0')).join('');
-  const hash = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(rawHex));
-  const hashHex = Array.from(new Uint8Array(hash)).map(b => b.toString(16).padStart(2, '0')).join('');
-  return [rawHex, hashHex];
-}
-
-let _oneTapNonce = null;
-
-// Callback global que Google llama cuando el usuario acepta el One Tap
-window.handleOneTap = async (response) => {
-  const { data, error } = await db.auth.signInWithIdToken({
-    provider: 'google',
-    token: response.credential,
-    nonce: _oneTapNonce,
-  });
-  if (error) {
-    console.error('One Tap error:', error);
-    // No mostrar error en UI — One Tap es silencioso
-  }
-  // Si va bien, onAuthStateChange dispara SIGNED_IN automaticamente
-};
-
-async function initOneTap() {
-  if (!window.google?.accounts?.id) return;
-  const [nonceRaw, nonceHashed] = await generateNonce();
-  _oneTapNonce = nonceRaw;
-  google.accounts.id.initialize({
-    client_id: GOOGLE_CLIENT_ID,
-    callback: window.handleOneTap,
-    nonce: nonceHashed,
-    auto_select: true,
-    cancel_on_tap_outside: false,
-    context: 'signin',
-  });
-  google.accounts.id.prompt();
-}
-
-function cancelOneTap() {
-  if (window.google?.accounts?.id) google.accounts.id.cancel();
-}
 
 // ─── State ─────────────────────────────────────
 let currentUser    = null;
@@ -143,7 +97,6 @@ window.addEventListener('DOMContentLoaded', async () => {
 //  AUTH
 // ══════════════════════════════════════════════════
 async function handleLogin(user) {
-  cancelOneTap(); // cerrar el popup de One Tap si sigue visible
   currentUser = user;
 
   // Mostrar UI inmediatamente sin esperar fetches
@@ -686,3 +639,4 @@ function friendlyError(msg) {
   if (msg.includes('User already registered')) return 'Este correo ya está registrado';
   return msg;
 }
+
