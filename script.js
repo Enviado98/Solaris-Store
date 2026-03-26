@@ -30,15 +30,13 @@ const db = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 // ─── Google One Tap ────────────────────────────
 
-// Genera un nonce aleatorio y devuelve [nonce_raw, nonce_hashed_base64]
+// Genera un nonce: devuelve [nonce_hex_raw, nonce_hex_hashed]
 async function generateNonce() {
   const raw = crypto.getRandomValues(new Uint8Array(32));
-  const rawStr = String.fromCharCode(...raw);
-  const b64 = btoa(rawStr);
-  const hash = await crypto.subtle.digest('SHA-256', raw);
-  const hashArr = Array.from(new Uint8Array(hash));
-  const hashB64 = btoa(String.fromCharCode(...hashArr));
-  return [b64, hashB64];
+  const rawHex = Array.from(raw).map(b => b.toString(16).padStart(2, '0')).join('');
+  const hash = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(rawHex));
+  const hashHex = Array.from(new Uint8Array(hash)).map(b => b.toString(16).padStart(2, '0')).join('');
+  return [rawHex, hashHex];
 }
 
 let _oneTapNonce = null;
