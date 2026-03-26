@@ -7,13 +7,63 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Exo+2:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css">
+
+  <!-- Solaris Icon System — SVG sprites compactos -->
+  <svg xmlns="http://www.w3.org/2000/svg" style="display:none">
+    <!-- Hexágono logo/loader -->
+    <symbol id="ico-hex" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round">
+      <polygon points="12,2 21,7 21,17 12,22 3,17 3,7"/>
+    </symbol>
+    <!-- Carrito -->
+    <symbol id="ico-cart" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M6 2 3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/>
+      <line x1="3" y1="6" x2="21" y2="6"/>
+      <path d="M16 10a4 4 0 01-8 0"/>
+    </symbol>
+    <!-- Configuración / Admin -->
+    <symbol id="ico-settings" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="12" cy="12" r="3"/>
+      <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/>
+    </symbol>
+    <!-- Saldo / Moneda -->
+    <symbol id="ico-wallet" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+      <rect x="2" y="7" width="20" height="14" rx="2"/>
+      <path d="M16 14a1 1 0 000 2 1 1 0 000-2z" fill="currentColor" stroke="none"/>
+      <path d="M22 7V5a2 2 0 00-2-2H4a2 2 0 00-2 2v2"/>
+    </symbol>
+    <!-- Usuario / Cuenta -->
+    <symbol id="ico-user" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/>
+      <circle cx="12" cy="7" r="4"/>
+    </symbol>
+    <!-- Tienda -->
+    <symbol id="ico-store" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/>
+      <polyline points="9 22 9 12 15 12 15 22"/>
+    </symbol>
+    <!-- Salir / Logout -->
+    <symbol id="ico-logout" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/>
+      <polyline points="16 17 21 12 16 7"/>
+      <line x1="21" y1="12" x2="9" y2="12"/>
+    </symbol>
+    <!-- Carrito vacío (estado empty) -->
+    <symbol id="ico-cart-empty" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M6 2 3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/>
+      <line x1="3" y1="6" x2="21" y2="6"/>
+      <path d="M16 10a4 4 0 01-8 0"/>
+      <line x1="9" y1="2" x2="15" y2="2" stroke-dasharray="2 2" opacity=".4"/>
+    </symbol>
+  </svg>
 </head>
 <body>
 
   <!-- ─── LOADER ─────────────────────────────────────────────────── -->
   <div id="loader">
     <div class="loader-inner">
-      <div class="loader-hex">⬡</div>
+      <div class="loader-hex">
+        <svg width="48" height="48"><use href="#ico-hex"/></svg>
+      </div>
       <div class="loader-logo">SOLARIS</div>
       <div class="loader-bar"><div class="loader-progress"></div></div>
     </div>
@@ -24,14 +74,25 @@
 
     <!-- TOP NAV -->
     <nav id="navbar">
-      <div class="nav-logo">⬡ SOLARIS</div>
+      <div class="nav-logo">
+        <svg width="18" height="18"><use href="#ico-hex"/></svg>
+        SOLARIS
+      </div>
       <div class="nav-actions">
         <div id="nav-balance" class="nav-balance hidden">
-          💰 $<span id="balance-amount">0.00</span>
+          <svg width="14" height="14"><use href="#ico-wallet"/></svg>
+          $<span id="balance-amount">0.00</span>
         </div>
-        <button id="nav-cart-btn" class="btn-icon hidden">🛒 <span id="cart-count">0</span></button>
-        <button id="nav-admin-btn" class="btn-icon hidden" title="Admin">⚙️</button>
-        <button id="nav-logout-btn" class="btn-icon hidden">Salir</button>
+        <button id="nav-cart-btn" class="btn-icon hidden">
+          <svg width="16" height="16"><use href="#ico-cart"/></svg>
+          <span id="cart-count">0</span>
+        </button>
+        <button id="nav-admin-btn" class="btn-icon hidden" title="Admin">
+          <svg width="16" height="16"><use href="#ico-settings"/></svg>
+        </button>
+        <button id="nav-logout-btn" class="btn-icon hidden">
+          <svg width="16" height="16"><use href="#ico-logout"/></svg>
+        </button>
       </div>
     </nav>
 
@@ -41,7 +102,9 @@
       <!-- ── AUTH ──────────────────────────────────────────────── -->
       <div id="view-auth" class="view active">
         <div class="auth-container">
-          <div class="auth-hex">⬡</div>
+          <div class="auth-hex">
+            <svg width="56" height="56"><use href="#ico-hex"/></svg>
+          </div>
           <div class="auth-logo">SOLARIS</div>
           <p class="auth-tagline">Tu tienda de servicios digitales</p>
 
@@ -116,7 +179,9 @@
           <button id="checkout-btn" class="btn-primary">Confirmar compra</button>
         </div>
         <div id="cart-empty" class="empty-state hidden">
-          <div class="empty-icon">🛒</div>
+          <div class="empty-icon">
+            <svg width="48" height="48"><use href="#ico-cart-empty"/></svg>
+          </div>
           <p>Tu carrito está vacío</p>
           <button class="btn-secondary" onclick="showView('catalog')">Ver productos</button>
         </div>
@@ -175,15 +240,21 @@
     <!-- BOTTOM NAV -->
     <nav id="bottom-nav" class="hidden">
       <button class="bottom-btn" data-view="catalog">
-        <span class="bottom-icon">🏪</span>
+        <span class="bottom-icon">
+          <svg width="22" height="22"><use href="#ico-store"/></svg>
+        </span>
         <small>Tienda</small>
       </button>
       <button class="bottom-btn" data-view="cart">
-        <span class="bottom-icon">🛒</span>
+        <span class="bottom-icon">
+          <svg width="22" height="22"><use href="#ico-cart"/></svg>
+        </span>
         <small>Carrito</small>
       </button>
       <button class="bottom-btn" id="account-btn">
-        <span class="bottom-icon">👤</span>
+        <span class="bottom-icon">
+          <svg width="22" height="22"><use href="#ico-user"/></svg>
+        </span>
         <small>Cuenta</small>
       </button>
     </nav>

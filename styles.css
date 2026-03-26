@@ -54,13 +54,14 @@ body::before {
 }
 .loader-inner { text-align: center; }
 .loader-hex {
-  font-size: 4rem;
   color: var(--gold);
   animation: hexPulse 1.6s ease-in-out infinite;
-  display: block;
-  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   margin-bottom: 10px;
 }
+.loader-hex svg { width: 48px; height: 48px; }
 .loader-logo {
   font-family: 'Orbitron', sans-serif;
   font-weight: 900;
@@ -103,7 +104,7 @@ body::before {
   padding: 0 16px;
   z-index: 100;
 }
-.nav-logo {
+.nav-logo { display: flex; align-items: center; gap: 7px;
   font-family: 'Orbitron', sans-serif;
   font-weight: 900;
   font-size: 1rem;
@@ -119,18 +120,25 @@ body::before {
   border: 1px solid var(--border);
   padding: 4px 10px;
   border-radius: 20px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
 }
 .btn-icon {
   background: var(--bg3);
   border: 1px solid var(--border);
   color: var(--text);
-  padding: 5px 11px;
+  padding: 5px 10px;
   border-radius: 8px;
   cursor: pointer;
   font-size: 0.8rem;
   font-family: 'Exo 2', sans-serif;
   transition: border-color 0.2s, color 0.2s;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
 }
+.btn-icon svg { flex-shrink: 0; }
 .btn-icon:hover { border-color: var(--gold); color: var(--gold); }
 
 /* ── MAIN ─────────────────────────────────────── */
@@ -165,13 +173,14 @@ body::before {
   box-shadow: 0 0 40px rgba(194,122,0,0.07), 0 2px 16px rgba(0,0,0,0.06);
 }
 .auth-hex {
-  font-size: 3.5rem;
   color: var(--gold);
-  text-align: center;
-  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   margin-bottom: 4px;
   animation: hexPulse 2.5s ease-in-out infinite;
 }
+.auth-hex svg { width: 56px; height: 56px; }
 .auth-logo {
   font-family: 'Orbitron', sans-serif;
   font-weight: 900;
@@ -476,7 +485,8 @@ textarea.input { resize: vertical; min-height: 80px; }
   align-items: center;
   gap: 14px;
 }
-.empty-icon { font-size: 3rem; }
+.empty-icon { display: flex; align-items: center; justify-content: center; color: var(--text-dim); margin-bottom: 8px; }
+.empty-icon svg { width: 48px; height: 48px; }
 
 /* ── ADMIN ────────────────────────────────────── */
 .admin-tabs { margin-bottom: 0; }
@@ -556,7 +566,7 @@ textarea.input { resize: vertical; min-height: 80px; }
   transition: color 0.2s;
   position: relative;
 }
-.bottom-icon { font-size: 1.25rem; line-height: 1; }
+.bottom-icon { display: flex; align-items: center; justify-content: center; line-height: 1; }
 .bottom-btn small { font-size: 0.68rem; }
 .bottom-btn.active { color: var(--gold); }
 .bottom-btn.active::before {
