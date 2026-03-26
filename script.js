@@ -75,18 +75,46 @@ async function handleLogin(user) {
   currentProfile = await fetchProfile(user.id);
   currentWallet  = await fetchWallet(user.id);
 
+  // Greeting
+  const name = currentProfile?.full_name?.split(' ')[0] || 'Hola';
+  const greeting = document.getElementById('topbar-greeting');
+  if (greeting) greeting.textContent = `Hola, ${name} 👋`;
+
   // Show authenticated UI
   ['nav-balance', 'nav-logout-btn', 'nav-cart-btn'].forEach(id =>
     document.getElementById(id).classList.remove('hidden')
   );
-  if (currentProfile?.is_admin)
+  if (currentProfile?.is_admin) {
     document.getElementById('nav-admin-btn').classList.remove('hidden');
+    const adminNavBtn = document.getElementById('admin-nav-btn');
+    if (adminNavBtn) adminNavBtn.style.display = '';
+  }
 
   document.getElementById('bottom-nav').classList.remove('hidden');
+
+  // Setup WA link
+  const waFab = document.getElementById('wa-fab');
+  if (waFab) waFab.href = `https://wa.me/${WA_NUMBER}`;
+
   syncBalanceUI();
   syncCartCount();
   showView('catalog');
   loadProducts();
+  loadUserStats();
+}
+
+async function loadUserStats() {
+  if (!currentUser) return;
+  const { data } = await db.from('orders')
+    .select('id, status')
+    .eq('user_id', currentUser.id);
+
+  const total  = data?.length || 0;
+  const active = data?.filter(o => o.status === 'completed').length || 0;
+  const elA = document.getElementById('stat-active');
+  const elO = document.getElementById('stat-orders');
+  if (elA) elA.textContent = active;
+  if (elO) elO.textContent = total;
 }
 
 function handleLogout() {
@@ -165,13 +193,13 @@ function setupEvents() {
     btn.addEventListener('click', () => showView(btn.dataset.view))
   );
 
-  // ── Account button (shows info)
+  // ── Account button
   document.getElementById('account-btn').addEventListener('click', () => {
     if (!currentUser) return;
     showModal('Mi cuenta',
       `<p><b>Nombre:</b> ${currentProfile?.full_name || '—'}</p>
        <p><b>Correo:</b> ${currentUser.email}</p>
-       <p style="margin-top:8px;font-size:1.1rem;color:var(--gold)"><b>Saldo:</b> $${parseFloat(currentWallet?.balance||0).toFixed(2)} USD</p>
+       <p style="margin-top:8px;font-size:1.1rem;color:var(--accent)"><b>Saldo:</b> $${parseFloat(currentWallet?.balance||0).toFixed(2)} USD</p>
        <p style="font-size:0.78rem;color:var(--text-dim);margin-top:8px">¿Necesitas recargar? Contáctanos por WhatsApp.</p>`
     );
   });
@@ -183,11 +211,17 @@ function setupEvents() {
     loadAdminProducts();
     loadAdminUsers();
   });
+  const adminNavBottom = document.getElementById('admin-nav-btn');
+  if (adminNavBottom) adminNavBottom.addEventListener('click', () => {
+    showView('admin');
+    loadAdminProducts();
+    loadAdminUsers();
+  });
 
   // ── Category filter
-  document.querySelectorAll('.filter-btn').forEach(btn =>
+  document.querySelectorAll('.cat-chip').forEach(btn =>
     btn.addEventListener('click', () => {
-      document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.cat-chip').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
       currentCat = btn.dataset.cat;
       renderProducts();
@@ -244,15 +278,15 @@ function renderProducts() {
     return `
       <div class="product-card">
         <div class="product-emoji">${emoji}</div>
-        <div class="product-cat">${p.category}</div>
+        <div class="product-cat">${esc(p.category)}</div>
         <div class="product-name">${esc(p.name)}</div>
         ${p.description ? `<div class="product-desc">${esc(p.description)}</div>` : ''}
         <div class="product-footer">
-          <div class="product-price-block">
+          <div>
             <div class="product-price">$${price(p.price)}</div>
             <div class="product-days">${p.duration_days} días</div>
           </div>
-          <button class="btn-add-cart" onclick="addToCart('${p.id}')">+ Carrito</button>
+          <button class="btn-add-cart" onclick="addToCart('${p.id}')">+ Agregar</button>
         </div>
       </div>`;
   }).join('');
@@ -379,7 +413,7 @@ async function loadAdminProducts() {
   el.innerHTML = data.map(p => `
     <div class="admin-item">
       <div class="admin-item-info">
-        <div class="admin-item-name">${CAT_EMOJI[p.category]||'⭐'} ${esc(p.name)} — <span style="color:var(--gold)">$${price(p.price)}</span></div>
+        <div class="admin-item-name">${CAT_EMOJI[p.category]||'⭐'} ${esc(p.name)} — <span style="color:var(--accent)">$${price(p.price)}</span></div>
         <div class="admin-item-meta">${p.category} · ${p.duration_days}d · ${p.is_active ? '✅ Activo' : '❌ Inactivo'}</div>
       </div>
       <div class="admin-item-actions">
@@ -519,7 +553,10 @@ function toast(msg, type = '') {
 }
 
 function syncBalanceUI() {
-  document.getElementById('balance-amount').textContent = price(currentWallet?.balance || 0);
+  const bal = price(currentWallet?.balance || 0);
+  document.getElementById('balance-amount').textContent = bal;
+  const hero = document.getElementById('hero-balance');
+  if (hero) hero.textContent = bal;
 }
 function syncCartCount() {
   document.getElementById('cart-count').textContent = cart.length;
