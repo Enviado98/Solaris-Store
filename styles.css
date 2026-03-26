@@ -148,6 +148,17 @@ body::before {
   letter-spacing: 0.1em;
   text-shadow: 0 1px 0 rgba(255,255,255,0.6);
 }
+.nav-logo svg {
+  animation: logoSpin 8s ease-in-out infinite;
+  transform-origin: center;
+}
+@keyframes logoSpin {
+  /* Espera 6.5s, gira en 1s, rebota en 0.5s */
+  0%,   81%  { transform: rotate(0deg)   scale(1);    }
+  93%         { transform: rotate(360deg) scale(1);    }
+  96%         { transform: rotate(360deg) scale(1.05); }
+  100%        { transform: rotate(360deg) scale(1);    }
+}
 .nav-actions { display: flex; align-items: center; }
 
 /* ── HAMBURGER BUTTON ─────────────────────────── */
@@ -953,4 +964,3 @@ textarea.input { resize: vertical; min-height: 80px; }
   background: rgba(229,57,53,0.12) !important;
   transition: border-color 0.2s, color 0.2s, background 0.2s;
 }
-
