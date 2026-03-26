@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <title>Solaris — Servicios Digitales</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Exo+2:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+  <!-- ─── LOADER ─────────────────────────────────────────────────── -->
+  <div id="loader">
+    <div class="loader-inner">
+      <div class="loader-hex">⬡</div>
+      <div class="loader-logo">SOLARIS</div>
+      <div class="loader-bar"><div class="loader-progress"></div></div>
+    </div>
+  </div>
+
+  <!-- ─── APP ───────────────────────────────────────────────────── -->
+  <div id="app" class="hidden">
+
+    <!-- TOP NAV -->
+    <nav id="navbar">
+      <div class="nav-logo">⬡ SOLARIS</div>
+      <div class="nav-actions">
+        <div id="nav-balance" class="nav-balance hidden">
+          💰 $<span id="balance-amount">0.00</span>
+        </div>
+        <button id="nav-cart-btn" class="btn-icon hidden">🛒 <span id="cart-count">0</span></button>
+        <button id="nav-admin-btn" class="btn-icon hidden" title="Admin">⚙️</button>
+        <button id="nav-logout-btn" class="btn-icon hidden">Salir</button>
+      </div>
+    </nav>
+
+    <!-- MAIN VIEWS -->
+    <main id="main">
+
+      <!-- ── AUTH ──────────────────────────────────────────────── -->
+      <div id="view-auth" class="view active">
+        <div class="auth-container">
+          <div class="auth-hex">⬡</div>
+          <div class="auth-logo">SOLARIS</div>
+          <p class="auth-tagline">Tu tienda de servicios digitales</p>
+
+          <div class="auth-tabs">
+            <button class="tab-btn active" data-tab="login">Iniciar Sesión</button>
+            <button class="tab-btn" data-tab="register">Registrarse</button>
+          </div>
+
+          <div id="tab-login" class="tab-content active">
+            <input type="email" id="login-email" placeholder="Correo electrónico" class="input">
+            <input type="password" id="login-password" placeholder="Contraseña" class="input">
+            <button id="login-btn" class="btn-primary">Entrar</button>
+          </div>
+
+          <div id="tab-register" class="tab-content">
+            <input type="text" id="reg-name" placeholder="Nombre completo" class="input">
+            <input type="email" id="reg-email" placeholder="Correo electrónico" class="input">
+            <input type="password" id="reg-password" placeholder="Contraseña (mín. 6 caracteres)" class="input">
+            <button id="register-btn" class="btn-primary">Crear cuenta</button>
+          </div>
+
+          <div id="auth-msg" class="auth-msg"></div>
+
+          <div class="auth-divider"><span>o continúa con</span></div>
+          <button id="google-btn" class="btn-google">
+            <svg width="18" height="18" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.08 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.31-8.16 2.31-6.26 0-11.57-3.58-13.46-8.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
+            Continuar con Google
+          </button>
+        </div>
+      </div>
+
+      <!-- ── CATALOG ────────────────────────────────────────────── -->
+      <div id="view-catalog" class="view">
+        <div class="view-header">
+          <h1>Servicios</h1>
+          <p>Selecciona el plan que necesitas</p>
+        </div>
+        <div class="category-filter">
+          <button class="filter-btn active" data-cat="all">Todos</button>
+          <button class="filter-btn" data-cat="Netflix">Netflix</button>
+          <button class="filter-btn" data-cat="HBO">HBO</button>
+          <button class="filter-btn" data-cat="Spotify">Spotify</button>
+          <button class="filter-btn" data-cat="Internet">Internet</button>
+          <button class="filter-btn" data-cat="Office">Office</button>
+          <button class="filter-btn" data-cat="VPN">VPN</button>
+          <button class="filter-btn" data-cat="Otro">Otro</button>
+        </div>
+        <div id="products-grid" class="products-grid">
+          <div class="loading-state">Cargando productos...</div>
+        </div>
+      </div>
+
+      <!-- ── CART ───────────────────────────────────────────────── -->
+      <div id="view-cart" class="view">
+        <div class="view-header">
+          <h1>Carrito</h1>
+        </div>
+        <div id="cart-items" class="cart-list"></div>
+        <div id="cart-summary" class="cart-summary hidden">
+          <div class="summary-row">
+            <span>Tu saldo</span>
+            <span id="summary-balance" class="summary-val">$0.00</span>
+          </div>
+          <div class="summary-row total">
+            <span>Total a pagar</span>
+            <span id="summary-total" class="summary-val">$0.00</span>
+          </div>
+          <div class="summary-row remaining">
+            <span>Saldo restante</span>
+            <span id="summary-remaining" class="summary-val">$0.00</span>
+          </div>
+          <button id="checkout-btn" class="btn-primary">Confirmar compra</button>
+        </div>
+        <div id="cart-empty" class="empty-state hidden">
+          <div class="empty-icon">🛒</div>
+          <p>Tu carrito está vacío</p>
+          <button class="btn-secondary" onclick="showView('catalog')">Ver productos</button>
+        </div>
+      </div>
+
+      <!-- ── ADMIN ──────────────────────────────────────────────── -->
+      <div id="view-admin" class="view">
+        <div class="view-header">
+          <h1>Panel Admin</h1>
+        </div>
+        <div class="admin-tabs">
+          <button class="tab-btn active" data-admin-tab="products">Productos</button>
+          <button class="tab-btn" data-admin-tab="users">Usuarios</button>
+          <button class="tab-btn" data-admin-tab="add">+ Agregar</button>
+        </div>
+
+        <div id="admin-tab-products" class="admin-tab active">
+          <div id="admin-products-list" class="admin-list">
+            <div class="loading-state">Cargando...</div>
+          </div>
+        </div>
+
+        <div id="admin-tab-users" class="admin-tab">
+          <div id="admin-users-list" class="admin-list">
+            <div class="loading-state">Cargando...</div>
+          </div>
+        </div>
+
+        <div id="admin-tab-add" class="admin-tab">
+          <div class="admin-form">
+            <input type="text" id="ap-name" placeholder="Nombre del producto" class="input">
+            <select id="ap-category" class="input">
+              <option value="">Categoría...</option>
+              <option value="Netflix">Netflix</option>
+              <option value="HBO">HBO</option>
+              <option value="Spotify">Spotify</option>
+              <option value="Internet">Internet</option>
+              <option value="Office">Office</option>
+              <option value="VPN">VPN</option>
+              <option value="Otro">Otro</option>
+            </select>
+            <input type="text" id="ap-desc" placeholder="Descripción breve" class="input">
+            <div class="input-row">
+              <input type="number" id="ap-price" placeholder="Precio (USD)" class="input" step="0.01" min="0.01">
+              <input type="number" id="ap-duration" placeholder="Días" class="input" value="30" min="1">
+            </div>
+            <textarea id="ap-account" placeholder="Datos de cuenta (usuario:contraseña)" class="input" rows="3"></textarea>
+            <button id="add-product-btn" class="btn-primary">Agregar Producto</button>
+            <div id="ap-msg" class="auth-msg"></div>
+          </div>
+        </div>
+      </div>
+
+    </main>
+
+    <!-- BOTTOM NAV -->
+    <nav id="bottom-nav" class="hidden">
+      <button class="bottom-btn" data-view="catalog">
+        <span class="bottom-icon">🏪</span>
+        <small>Tienda</small>
+      </button>
+      <button class="bottom-btn" data-view="cart">
+        <span class="bottom-icon">🛒</span>
+        <small>Carrito</small>
+      </button>
+      <button class="bottom-btn" id="account-btn">
+        <span class="bottom-icon">👤</span>
+        <small>Cuenta</small>
+      </button>
+    </nav>
+
+  </div><!-- /app -->
+
+  <!-- ─── MODAL ──────────────────────────────────────────────────── -->
+  <div id="modal" class="modal hidden">
+    <div class="modal-box">
+      <div id="modal-content"></div>
+      <button id="modal-close" class="btn-secondary" style="width:100%;margin-top:4px">Cerrar</button>
+    </div>
+  </div>
+
+  <!-- ─── TOAST ─────────────────────────────────────────────────── -->
+  <div id="toast"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="script.js"></script>
+</body>
+</html>
