@@ -63,7 +63,7 @@ window.addEventListener('DOMContentLoaded', async () => {
 
   db.auth.onAuthStateChange(async (event, session) => {
     if (event === 'SIGNED_IN')  await handleLogin(session.user);
-    if (event === 'SIGNED_OUT') handleLogout();
+    if (event === 'SIGNED_OUT' && !window._manualLogout) handleLogout();
   });
 
   setupEvents();
@@ -100,9 +100,7 @@ function showLogoutScreen() {
     screen.innerHTML = `
       <div class="logout-inner">
         <div class="logout-hex-wrap">
-          <svg class="logout-hex" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round">
-            <polygon points="12,2 21,7 21,17 12,22 3,17 3,7"/>
-          </svg>
+          <svg class="logout-hex" viewBox="0 0 24 24"><use href="#ico-hex"/></svg>
         </div>
         <div class="logout-label">Cerrando sesión...</div>
       </div>`;
@@ -186,10 +184,12 @@ function setupEvents() {
 
   // ── Logout
   document.getElementById('nav-logout-btn').addEventListener('click', async () => {
+    window._manualLogout = true;
     showLogoutScreen();
     try { await db.auth.signOut(); } catch (e) { /* forzamos logout local si signOut falla */ }
     await new Promise(r => setTimeout(r, 1900));
     hideLogoutScreen();
+    window._manualLogout = false;
     handleLogout();
   });
 
