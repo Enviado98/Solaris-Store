@@ -241,8 +241,12 @@ function setupEvents() {
   document.getElementById('nav-logout-btn').addEventListener('click', async () => {
     window._manualLogout = true;
     showLogoutScreen();
-    try { await db.auth.signOut(); } catch (e) { /* forzamos logout local si signOut falla */ }
-    await new Promise(r => setTimeout(r, 1900));
+    // Timeout de 4s: si Supabase no responde, logout local forzado
+    await Promise.race([
+      db.auth.signOut(),
+      new Promise(r => setTimeout(r, 4000)),
+    ]).catch(() => {});
+    await new Promise(r => setTimeout(r, 600));
     hideLogoutScreen();
     window._manualLogout = false;
     handleLogout();
