@@ -738,20 +738,18 @@ textarea.input { resize: vertical; min-height: 80px; }
 }
 .logout-hex-wrap {
   position: relative;
-  width: 40px;
-  height: 40px;
+  width: 92px;
+  height: 92px;
   display: flex;
   align-items: center;
   justify-content: center;
-  /* Blur localizado solo alrededor del icono */
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   border-radius: 50%;
-  padding: 18px;
 }
 .logout-hex {
-  width: 40px;
-  height: 40px;
+  width: 56px;
+  height: 56px;
   color: #c27a00;
   animation: logoutSpin 2.2s ease-in-out infinite, logoutGlow 2.2s ease-in-out infinite;
 }
