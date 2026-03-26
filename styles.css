@@ -759,16 +759,21 @@ textarea.input { resize: vertical; min-height: 80px; }
   position: fixed;
   inset: 0;
   z-index: 10000;
-  background: transparent;
+  background: rgba(6, 10, 20, 0);
+  backdrop-filter: blur(0px);
+  -webkit-backdrop-filter: blur(0px);
   display: flex;
   align-items: center;
   justify-content: center;
   opacity: 0;
-  transition: opacity 0.35s ease;
+  transition: opacity 0.45s ease, background 0.45s ease, backdrop-filter 0.45s ease, -webkit-backdrop-filter 0.45s ease;
   pointer-events: none;
 }
 #logout-screen.visible {
   opacity: 1;
+  background: rgba(6, 10, 20, 0.55);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   pointer-events: all;
 }
 #logout-screen.hidden {
