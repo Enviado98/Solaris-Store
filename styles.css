@@ -117,28 +117,32 @@ body::before {
   content: '';
   position: absolute;
   top: 0;
-  left: -60%;
-  width: 40%;
+  left: -100%;
+  width: 70%;
   height: 100%;
   background: linear-gradient(
     105deg,
-    transparent 0%,
-    rgba(255,255,255,0) 30%,
-    rgba(255,255,255,0.52) 50%,
-    rgba(255,255,255,0) 70%,
-    transparent 100%
+    transparent     0%,
+    rgba(255,255,255,0)    15%,
+    rgba(255,255,255,0.12) 30%,
+    rgba(255,255,255,0.38) 45%,
+    rgba(255,255,255,0.45) 50%,
+    rgba(255,255,255,0.38) 55%,
+    rgba(255,255,255,0.12) 70%,
+    rgba(255,255,255,0)    85%,
+    transparent     100%
   );
-  transform: skewX(-15deg);
-  animation: navShimmer 3s ease-in-out infinite;
+  transform: skewX(-12deg);
+  animation: navShimmer 6s ease-in-out infinite;
   pointer-events: none;
 }
 
 @keyframes navShimmer {
-  0%   { left: -60%; opacity: 0; }
-  8%   { opacity: 1; }
-  40%  { left: 130%; opacity: 1; }
-  42%  { opacity: 0; }
-  100% { left: 130%; opacity: 0; }
+  0%   { left: -100%; opacity: 0; }
+  6%   { opacity: 1; }
+  44%  { left: 140%; opacity: 1; }
+  48%  { opacity: 0; }
+  100% { left: 140%; opacity: 0; }
 }
 .nav-logo { display: flex; align-items: center; gap: 7px;
   font-family: 'Orbitron', sans-serif;
@@ -149,15 +153,17 @@ body::before {
   text-shadow: 0 1px 0 rgba(255,255,255,0.6);
 }
 .nav-logo svg {
-  animation: logoSpin 8s ease-in-out infinite;
   transform-origin: center;
+  transition: transform 0.08s linear;
+  will-change: transform;
 }
-@keyframes logoSpin {
-  /* Espera 6.5s, gira en 1s, rebota en 0.5s */
-  0%,   81%  { transform: rotate(0deg)   scale(1);    }
-  93%         { transform: rotate(360deg) scale(1);    }
-  96%         { transform: rotate(360deg) scale(1.05); }
-  100%        { transform: rotate(360deg) scale(1);    }
+.nav-logo svg.logo-pulse {
+  animation: logoPulse 0.45s cubic-bezier(0.34,1.56,0.64,1) forwards;
+}
+@keyframes logoPulse {
+  0%   { transform: rotate(var(--logo-rot, 0deg)) scale(1);    }
+  45%  { transform: rotate(var(--logo-rot, 0deg)) scale(1.10); }
+  100% { transform: rotate(var(--logo-rot, 0deg)) scale(1);    }
 }
 .nav-actions { display: flex; align-items: center; }
 
