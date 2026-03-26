@@ -47,17 +47,19 @@ window.addEventListener('DOMContentLoaded', async () => {
   });
   document.body.appendChild(wa);
 
+  // Resolve session before showing any UI (prevents flash of login screen)
+  const { data: { session } } = await db.auth.getSession();
+
   // Boot animation
   await sleep(1350);
   fadeOut(document.getElementById('loader'));
   await sleep(420);
   document.getElementById('loader').style.display = 'none';
-  document.getElementById('app').classList.remove('hidden');
 
-  // Check session
-  const { data: { session } } = await db.auth.getSession();
+  // Now show app with the correct view already determined
   if (session) await handleLogin(session.user);
   else showAuthView();
+  document.getElementById('app').classList.remove('hidden');
 
   db.auth.onAuthStateChange(async (event, session) => {
     if (event === 'SIGNED_IN')  await handleLogin(session.user);
