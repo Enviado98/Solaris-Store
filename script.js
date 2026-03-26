@@ -155,7 +155,7 @@ function setupEvents() {
   document.getElementById('google-btn').addEventListener('click', async () => {
     const { error } = await db.auth.signInWithOAuth({
       provider: 'google',
-      options: { redirectTo: window.location.href }
+      options: { redirectTo: 'https://solaris-store.onrender.com/' }
     });
     if (error) setMsg('auth-msg', 'Error al conectar con Google', 'error');
   });
