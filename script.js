@@ -281,15 +281,20 @@ function setupEvents() {
     loadAdminUsers();
   });
 
-  // ── Category filter
-  document.querySelectorAll('.filter-btn').forEach(btn =>
-    btn.addEventListener('click', () => {
-      document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      currentCat = btn.dataset.cat;
+  // ── Category cards
+  document.querySelectorAll('.cat-card').forEach(card =>
+    card.addEventListener('click', () => {
+      currentCat = card.dataset.cat;
+      document.getElementById('cat-grid').classList.add('hidden');
+      document.getElementById('products-panel').classList.remove('hidden');
       renderProducts();
     })
   );
+  document.getElementById('back-to-cats').addEventListener('click', () => {
+    document.getElementById('products-panel').classList.add('hidden');
+    document.getElementById('cat-grid').classList.remove('hidden');
+    currentCat = 'all';
+  });
 
   // ── Checkout
   document.getElementById('checkout-btn').addEventListener('click', doCheckout);
@@ -585,6 +590,12 @@ function showView(name) {
   document.querySelectorAll('.bottom-btn').forEach(b => b.classList.remove('active'));
   document.querySelector(`.bottom-btn[data-view="${name}"]`)?.classList.add('active');
   if (name === 'cart') renderCart();
+  if (name === 'catalog') {
+    // Siempre volver a la grilla de categorías al entrar al catálogo
+    document.getElementById('cat-grid')?.classList.remove('hidden');
+    document.getElementById('products-panel')?.classList.add('hidden');
+    currentCat = 'all';
+  }
 }
 
 function showAuthView() {

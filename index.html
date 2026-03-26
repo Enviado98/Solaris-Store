@@ -142,18 +142,43 @@
           <h1>Servicios</h1>
           <p>Selecciona el plan que necesitas</p>
         </div>
-        <div class="category-filter">
-          <button class="filter-btn active" data-cat="all">Todos</button>
-          <button class="filter-btn" data-cat="Netflix">Netflix</button>
-          <button class="filter-btn" data-cat="HBO">HBO</button>
-          <button class="filter-btn" data-cat="Spotify">Spotify</button>
-          <button class="filter-btn" data-cat="Internet">Internet</button>
-          <button class="filter-btn" data-cat="Office">Office</button>
-          <button class="filter-btn" data-cat="VPN">VPN</button>
-          <button class="filter-btn" data-cat="Otro">Otro</button>
+        <!-- Vista: grilla de categorías -->
+        <div id="cat-grid" class="cat-grid">
+          <button class="cat-card" data-cat="Netflix">
+            <span class="cat-card-emoji">📺</span>
+            <span class="cat-card-name">Netflix</span>
+          </button>
+          <button class="cat-card" data-cat="HBO">
+            <span class="cat-card-emoji">🎬</span>
+            <span class="cat-card-name">HBO</span>
+          </button>
+          <button class="cat-card" data-cat="Spotify">
+            <span class="cat-card-emoji">🎵</span>
+            <span class="cat-card-name">Spotify</span>
+          </button>
+          <button class="cat-card" data-cat="Internet">
+            <span class="cat-card-emoji">📶</span>
+            <span class="cat-card-name">Internet</span>
+          </button>
+          <button class="cat-card" data-cat="Office">
+            <span class="cat-card-emoji">💼</span>
+            <span class="cat-card-name">Office</span>
+          </button>
+          <button class="cat-card" data-cat="VPN">
+            <span class="cat-card-emoji">🔐</span>
+            <span class="cat-card-name">VPN</span>
+          </button>
+          <button class="cat-card" data-cat="Otro">
+            <span class="cat-card-emoji">⭐</span>
+            <span class="cat-card-name">Otro</span>
+          </button>
         </div>
-        <div id="products-grid" class="products-grid">
-          <div class="loading-state">Cargando productos...</div>
+        <!-- Vista: productos de la categoría seleccionada -->
+        <div id="products-panel" class="products-panel hidden">
+          <button id="back-to-cats" class="back-btn">← Categorías</button>
+          <div id="products-grid" class="products-grid">
+            <div class="loading-state">Cargando productos...</div>
+          </div>
         </div>
       </div>
 
