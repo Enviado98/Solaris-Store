@@ -95,21 +95,58 @@ body::before {
   position: fixed;
   top: 0; left: 0; right: 0;
   height: var(--nav-h);
-  background: rgba(255,255,255,0.92);
-  backdrop-filter: blur(14px);
-  border-bottom: 1px solid var(--border);
+  background: linear-gradient(
+    105deg,
+    #fffbf0 0%,
+    #fff8e1 25%,
+    #fef3c7 55%,
+    #fde68a 80%,
+    #fbbf24 100%
+  );
+  border-bottom: 1px solid rgba(194,122,0,0.18);
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: 0 16px;
   z-index: 100;
+  overflow: hidden;
+}
+
+/* Barrido de luz cada 3s */
+#navbar::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -60%;
+  width: 40%;
+  height: 100%;
+  background: linear-gradient(
+    105deg,
+    transparent 0%,
+    rgba(255,255,255,0) 30%,
+    rgba(255,255,255,0.52) 50%,
+    rgba(255,255,255,0) 70%,
+    transparent 100%
+  );
+  transform: skewX(-15deg);
+  animation: navShimmer 3s ease-in-out infinite;
+  pointer-events: none;
+}
+
+@keyframes navShimmer {
+  0%   { left: -60%; opacity: 0; }
+  8%   { opacity: 1; }
+  40%  { left: 130%; opacity: 1; }
+  42%  { opacity: 0; }
+  100% { left: 130%; opacity: 0; }
 }
 .nav-logo { display: flex; align-items: center; gap: 7px;
   font-family: 'Orbitron', sans-serif;
   font-weight: 900;
   font-size: 1rem;
-  color: var(--gold);
+  color: #7a4800;
   letter-spacing: 0.1em;
+  text-shadow: 0 1px 0 rgba(255,255,255,0.6);
 }
 .nav-actions { display: flex; align-items: center; }
 
@@ -131,13 +168,13 @@ body::before {
   display: block;
   width: 20px;
   height: 2px;
-  background: var(--text);
+  background: #7a4800;
   border-radius: 2px;
   transition: transform 0.3s ease, opacity 0.3s ease, background 0.2s;
 }
-.btn-hamburger.open span:nth-child(1) { transform: translateY(7px) rotate(45deg); background: var(--gold); }
+.btn-hamburger.open span:nth-child(1) { transform: translateY(7px) rotate(45deg); background: #7a4800; }
 .btn-hamburger.open span:nth-child(2) { opacity: 0; transform: scaleX(0); }
-.btn-hamburger.open span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); background: var(--gold); }
+.btn-hamburger.open span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); background: #7a4800; }
 
 /* ── NAV DROPDOWN PANEL ───────────────────────── */
 .nav-panel {
@@ -916,3 +953,4 @@ textarea.input { resize: vertical; min-height: 80px; }
   background: rgba(229,57,53,0.12) !important;
   transition: border-color 0.2s, color 0.2s, background 0.2s;
 }
+
