@@ -1,20 +1,20 @@
 /* ═══════════════════════════════════════════════
    SOLARIS — styles.css
-   Dark solar aesthetic — Orbitron + Exo 2
+   Light solar aesthetic — Orbitron + Exo 2
 ═══════════════════════════════════════════════ */
 
 :root {
-  --bg:         #080810;
-  --bg2:        #0f0f1c;
-  --bg3:        #16162e;
-  --border:     rgba(245, 158, 11, 0.14);
-  --gold:       #f59e0b;
-  --gold-dim:   rgba(245, 158, 11, 0.65);
+  --bg:         #ffffff;
+  --bg2:        #f6f6fb;
+  --bg3:        #ebebf4;
+  --border:     rgba(100, 80, 0, 0.13);
+  --gold:       #c27a00;
+  --gold-dim:   rgba(194, 122, 0, 0.65);
   --gold-glow:  rgba(245, 158, 11, 0.10);
-  --text:       #e4e4f0;
-  --text-dim:   #7777aa;
-  --danger:     #f43f5e;
-  --success:    #22d3a5;
+  --text:       #1a1a2e;
+  --text-dim:   #7070a0;
+  --danger:     #e0284a;
+  --success:    #12a882;
   --radius:     13px;
   --nav-h:      58px;
   --bot-h:      66px;
@@ -36,8 +36,8 @@ body::before {
   content: '';
   position: fixed; inset: 0;
   background:
-    radial-gradient(ellipse 70% 45% at 50% -5%,  rgba(245,158,11,0.07) 0%, transparent 65%),
-    radial-gradient(ellipse 40% 30% at 90% 90%, rgba(245,158,11,0.04) 0%, transparent 55%);
+    radial-gradient(ellipse 70% 45% at 50% -5%,  rgba(245,158,11,0.04) 0%, transparent 65%),
+    radial-gradient(ellipse 40% 30% at 90% 90%, rgba(245,158,11,0.02) 0%, transparent 55%);
   pointer-events: none;
   z-index: 0;
 }
@@ -94,7 +94,7 @@ body::before {
   position: fixed;
   top: 0; left: 0; right: 0;
   height: var(--nav-h);
-  background: rgba(8,8,16,0.88);
+  background: rgba(255,255,255,0.92);
   backdrop-filter: blur(14px);
   border-bottom: 1px solid var(--border);
   display: flex;
@@ -162,7 +162,7 @@ body::before {
   background: var(--bg2);
   border: 1px solid var(--border);
   border-radius: 20px;
-  box-shadow: 0 0 80px rgba(245,158,11,0.05);
+  box-shadow: 0 0 40px rgba(194,122,0,0.07), 0 2px 16px rgba(0,0,0,0.06);
 }
 .auth-hex {
   font-size: 3.5rem;
@@ -250,7 +250,7 @@ textarea.input { resize: vertical; min-height: 80px; }
   margin-top: 2px;
   letter-spacing: 0.02em;
 }
-.btn-primary:hover  { background: #fbbf24; transform: translateY(-1px); }
+.btn-primary:hover  { background: #e08f00; transform: translateY(-1px); }
 .btn-primary:active { transform: none; }
 .btn-primary:disabled { opacity: 0.45; cursor: not-allowed; transform: none; }
 
@@ -324,9 +324,10 @@ textarea.input { resize: vertical; min-height: 80px; }
   padding: 13px;
   position: relative;
   overflow: hidden;
-  transition: border-color 0.25s, transform 0.2s;
+  transition: border-color 0.25s, transform 0.2s, box-shadow 0.25s;
   display: flex;
   flex-direction: column;
+  box-shadow: 0 1px 6px rgba(0,0,0,0.05);
 }
 .product-card::after {
   content: '';
@@ -338,7 +339,7 @@ textarea.input { resize: vertical; min-height: 80px; }
   transition: transform 0.3s;
   transform-origin: left;
 }
-.product-card:hover { border-color: var(--gold-dim); transform: translateY(-2px); }
+.product-card:hover { border-color: var(--gold-dim); transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,0,0,0.09); }
 .product-card:hover::after { transform: scaleX(1); }
 
 .product-emoji { font-size: 1.4rem; margin-bottom: 6px; }
@@ -534,7 +535,7 @@ textarea.input { resize: vertical; min-height: 80px; }
   position: fixed;
   bottom: 0; left: 0; right: 0;
   height: var(--bot-h);
-  background: rgba(8,8,16,0.92);
+  background: rgba(255,255,255,0.95);
   backdrop-filter: blur(14px);
   border-top: 1px solid var(--border);
   display: flex;
@@ -590,7 +591,7 @@ textarea.input { resize: vertical; min-height: 80px; }
 /* ── MODAL ────────────────────────────────────── */
 .modal {
   position: fixed; inset: 0;
-  background: rgba(0,0,0,0.72);
+  background: rgba(20,20,50,0.55);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -608,7 +609,7 @@ textarea.input { resize: vertical; min-height: 80px; }
   display: flex;
   flex-direction: column;
   gap: 14px;
-  box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+  box-shadow: 0 20px 60px rgba(0,0,0,0.18);
 }
 #modal-content { display: flex; flex-direction: column; gap: 11px; }
 #modal-content h3 {
