@@ -142,40 +142,148 @@
           <h1>Servicios</h1>
           <p>Selecciona el plan que necesitas</p>
         </div>
-        <!-- Vista: grilla de categorías -->
+        <!-- ══ GRILLA DE SERVICIOS ══════════════════════════════
+             Para añadir un servicio nuevo, copia un bloque <button class="svc-card">
+             y ajusta: data-cat, --svc-color y el SVG interno.
+             Luego registra el mismo string en CAT_MAP en script.js
+        ═══════════════════════════════════════════════════════ -->
         <div id="cat-grid" class="cat-grid">
-          <button class="cat-card" data-cat="Netflix">
-            <span class="cat-card-emoji">📺</span>
-            <span class="cat-card-name">Netflix</span>
+          <button class="svc-card" data-cat="Netflix" style="--svc-color:#E50914">
+            <span class="svc-logo">
+              <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M5 3l1.5 9L5 21h2.5l1-6 1 6H12l-1.5-9L12 3H9.5l-1 6-1-6z" fill="white"/></svg>
+            </span>
+            <span class="svc-name">Netflix</span>
           </button>
-          <button class="cat-card" data-cat="HBO">
-            <span class="cat-card-emoji">🎬</span>
-            <span class="cat-card-name">HBO</span>
+          <button class="svc-card" data-cat="Vix" style="--svc-color:#0066FF">
+            <span class="svc-logo">
+              <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><text x="3" y="17" font-size="11" font-weight="900" fill="white" font-family="Arial">VIX</text></svg>
+            </span>
+            <span class="svc-name">Vix Premium</span>
           </button>
-          <button class="cat-card" data-cat="Spotify">
-            <span class="cat-card-emoji">🎵</span>
-            <span class="cat-card-name">Spotify</span>
+          <button class="svc-card" data-cat="HBO" style="--svc-color:#6600CC">
+            <span class="svc-logo">
+              <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><text x="2" y="16" font-size="9" font-weight="900" fill="white" font-family="Arial">HBO</text><text x="1" y="21" font-size="6" fill="white" font-family="Arial">MAX</text></svg>
+            </span>
+            <span class="svc-name">HBO Max</span>
           </button>
-          <button class="cat-card" data-cat="Internet">
-            <span class="cat-card-emoji">📶</span>
-            <span class="cat-card-name">Internet</span>
+          <button class="svc-card" data-cat="Disney" style="--svc-color:#0C2A6E">
+            <span class="svc-logo">
+              <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><text x="1" y="13" font-size="7.5" font-weight="900" fill="white" font-family="Arial">Disney</text><text x="15" y="13" font-size="9" font-weight="900" fill="#4DAAFF" font-family="Arial">+</text></svg>
+            </span>
+            <span class="svc-name">Disney+</span>
           </button>
-          <button class="cat-card" data-cat="Office">
-            <span class="cat-card-emoji">💼</span>
-            <span class="cat-card-name">Office</span>
+          <button class="svc-card" data-cat="Paramount" style="--svc-color:#0064FF">
+            <span class="svc-logo">
+              <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><text x="1" y="13" font-size="6" font-weight="700" fill="white" font-family="Arial">PARA-</text><text x="1" y="20" font-size="6" font-weight="700" fill="white" font-family="Arial">MOUNT+</text></svg>
+            </span>
+            <span class="svc-name">Paramount+</span>
           </button>
-          <button class="cat-card" data-cat="VPN">
-            <span class="cat-card-emoji">🔐</span>
-            <span class="cat-card-name">VPN</span>
+          <button class="svc-card" data-cat="PrimeVideo" style="--svc-color:#00A8E1">
+            <span class="svc-logo">
+              <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><text x="1" y="13" font-size="6.5" font-weight="700" fill="white" font-family="Arial">prime</text><text x="1" y="21" font-size="6.5" font-weight="700" fill="white" font-family="Arial">video</text></svg>
+            </span>
+            <span class="svc-name">Prime Video</span>
           </button>
-          <button class="cat-card" data-cat="Otro">
-            <span class="cat-card-emoji">⭐</span>
-            <span class="cat-card-name">Otro</span>
+          <button class="svc-card" data-cat="Crunchyroll" style="--svc-color:#F47521">
+            <span class="svc-logo">
+              <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="9" fill="none" stroke="white" stroke-width="2.5"/><circle cx="12" cy="12" r="4" fill="white"/></svg>
+            </span>
+            <span class="svc-name">Crunchyroll</span>
+          </button>
+          <button class="svc-card" data-cat="OleadaTV" style="--svc-color:#1A1A2E">
+            <span class="svc-logo">
+              <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><text x="2" y="13" font-size="6" font-weight="700" fill="#C27A00" font-family="Arial">OLEADA</text><text x="5" y="20" font-size="6" font-weight="700" fill="white" font-family="Arial">TV</text></svg>
+            </span>
+            <span class="svc-name">Oleada TV</span>
+          </button>
+          <button class="svc-card" data-cat="UniversalPlus" style="--svc-color:#000000">
+            <span class="svc-logo">
+              <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><text x="1" y="13" font-size="5.5" font-weight="700" fill="white" font-family="Arial">UNIVER-</text><text x="1" y="21" font-size="5.5" font-weight="700" fill="white" font-family="Arial">SAL+</text></svg>
+            </span>
+            <span class="svc-name">Universal+</span>
+          </button>
+          <button class="svc-card" data-cat="Mubi" style="--svc-color:#0E1826">
+            <span class="svc-logo">
+              <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><text x="3" y="17" font-size="10" font-weight="900" fill="white" font-family="Arial">mubi</text></svg>
+            </span>
+            <span class="svc-name">Mubi</span>
+          </button>
+          <button class="svc-card" data-cat="FoxOne" style="--svc-color:#E8001C">
+            <span class="svc-logo">
+              <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><text x="3" y="17" font-size="10" font-weight="900" fill="white" font-family="Arial">FOX</text></svg>
+            </span>
+            <span class="svc-name">Fox One</span>
+          </button>
+          <button class="svc-card" data-cat="IPTVSmarters" style="--svc-color:#2D2D2D">
+            <span class="svc-logo">
+              <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><rect x="4" y="5" width="16" height="11" rx="1.5" fill="none" stroke="white" stroke-width="1.5"/><polygon points="9,8 9,13 15,10.5" fill="white"/></svg>
+            </span>
+            <span class="svc-name">IPTV Smarters</span>
+          </button>
+          <button class="svc-card" data-cat="Spotify" style="--svc-color:#1DB954">
+            <span class="svc-logo">
+              <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="9" fill="none" stroke="white" stroke-width="1.5"/><path d="M7 9.5c2.5-1 5.5-1 8 0M7.5 12c2-0.8 4.5-0.8 6.5 0M8 14.5c1.5-0.5 3.5-0.5 5 0" stroke="white" stroke-width="1.5" stroke-linecap="round" fill="none"/></svg>
+            </span>
+            <span class="svc-name">Spotify</span>
+          </button>
+          <button class="svc-card" data-cat="YouTubePremium" style="--svc-color:#FF0000">
+            <span class="svc-logo">
+              <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><rect x="3" y="6" width="18" height="12" rx="3" fill="none" stroke="white" stroke-width="1.5"/><polygon points="10,9 10,15 16,12" fill="white"/></svg>
+            </span>
+            <span class="svc-name">YouTube Premium</span>
+          </button>
+          <button class="svc-card" data-cat="AmazonMusic" style="--svc-color:#00A0C6">
+            <span class="svc-logo">
+              <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><text x="2" y="12" font-size="5.5" font-weight="700" fill="white" font-family="Arial">amazon</text><text x="2" y="20" font-size="6" font-weight="700" fill="white" font-family="Arial">music</text></svg>
+            </span>
+            <span class="svc-name">Amazon Music</span>
+          </button>
+          <button class="svc-card" data-cat="GamepassCore" style="--svc-color:#107C10">
+            <span class="svc-logo">
+              <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="9" fill="none" stroke="white" stroke-width="1.5"/><text x="6" y="16" font-size="7" font-weight="900" fill="white" font-family="Arial">GP</text></svg>
+            </span>
+            <span class="svc-name">Gamepass Premium</span>
+          </button>
+          <button class="svc-card" data-cat="GamepassUlt" style="--svc-color:#0A5A0A">
+            <span class="svc-logo">
+              <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="9" fill="none" stroke="white" stroke-width="1.5"/><text x="5" y="16" font-size="6" font-weight="900" fill="white" font-family="Arial">ULT</text></svg>
+            </span>
+            <span class="svc-name">Gamepass Ultimate</span>
+          </button>
+          <button class="svc-card" data-cat="ChatGPT" style="--svc-color:#10A37F">
+            <span class="svc-logo">
+              <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 4a8 8 0 0 1 5.7 13.6L12 20l-5.7-2.4A8 8 0 0 1 12 4z" fill="none" stroke="white" stroke-width="1.5"/><circle cx="12" cy="12" r="3" fill="white"/></svg>
+            </span>
+            <span class="svc-name">ChatGPT</span>
+          </button>
+          <button class="svc-card" data-cat="Canva" style="--svc-color:#7D2AE8">
+            <span class="svc-logo">
+              <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><text x="3" y="17" font-size="9" font-weight="900" fill="white" font-family="Arial">Canva</text></svg>
+            </span>
+            <span class="svc-name">Canva</span>
+          </button>
+          <button class="svc-card" data-cat="Office" style="--svc-color:#D83B01">
+            <span class="svc-logo">
+              <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><text x="4" y="16" font-size="9" font-weight="900" fill="white" font-family="Arial">O365</text></svg>
+            </span>
+            <span class="svc-name">Office 365</span>
+          </button>
+          <button class="svc-card" data-cat="Windows11" style="--svc-color:#0067B8">
+            <span class="svc-logo">
+              <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><rect x="4" y="4" width="7" height="7" rx="1" fill="white"/><rect x="13" y="4" width="7" height="7" rx="1" fill="white"/><rect x="4" y="13" width="7" height="7" rx="1" fill="white"/><rect x="13" y="13" width="7" height="7" rx="1" fill="white"/></svg>
+            </span>
+            <span class="svc-name">Windows 11</span>
+          </button>
+          <button class="svc-card" data-cat="Windows10" style="--svc-color:#00A4EF">
+            <span class="svc-logo">
+              <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><rect x="4" y="4" width="7" height="7" rx="1" fill="white"/><rect x="13" y="4" width="7" height="7" rx="1" fill="white"/><rect x="4" y="13" width="7" height="7" rx="1" fill="white"/><rect x="13" y="13" width="7" height="7" rx="1" fill="white"/></svg>
+            </span>
+            <span class="svc-name">Windows 10</span>
           </button>
         </div>
-        <!-- Vista: productos de la categoría seleccionada -->
+        <!-- Vista: productos del servicio seleccionado -->
         <div id="products-panel" class="products-panel hidden">
-          <button id="back-to-cats" class="back-btn">← Categorías</button>
+          <button id="back-to-cats" class="back-btn">← Servicios</button>
           <div id="products-grid" class="products-grid">
             <div class="loading-state">Cargando productos...</div>
           </div>

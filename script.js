@@ -13,15 +13,36 @@ const GOOGLE_CLIENT_ID  = '243529116303-r4t75out47hhph4ku94bmh9mmmlrbn8b.apps.go
 // ← Cambia esto por tu número de WhatsApp (con código de país, sin + ni espacios)
 const WA_NUMBER = '521234567890';
 
-// ─── Emojis por categoría ──────────────────────
-const CAT_EMOJI = {
-  Netflix:  '📺',
-  HBO:      '🎬',
-  Spotify:  '🎵',
-  Internet: '📶',
-  Office:   '💼',
-  VPN:      '🔐',
-  Otro:     '⭐',
+// ─── Mapa de servicios → categoría DB ──────────
+// Para añadir un servicio: agrega aquí key: 'Categoria'
+// y añade el botón correspondiente en index.html
+const CAT_MAP = {
+  // Streaming
+  Netflix:        'Streaming',
+  Vix:            'Streaming',
+  HBO:            'Streaming',
+  Disney:         'Streaming',
+  Paramount:      'Streaming',
+  PrimeVideo:     'Streaming',
+  Crunchyroll:    'Streaming',
+  OleadaTV:       'Streaming',
+  UniversalPlus:  'Streaming',
+  Mubi:           'Streaming',
+  FoxOne:         'Streaming',
+  IPTVSmarters:   'Streaming',
+  // Música
+  Spotify:        'Musica',
+  YouTubePremium: 'Musica',
+  AmazonMusic:    'Musica',
+  // Gaming
+  GamepassCore:   'Gaming',
+  GamepassUlt:    'Gaming',
+  // Software
+  ChatGPT:        'Software',
+  Canva:          'Software',
+  Office:         'Software',
+  Windows11:      'Software',
+  Windows10:      'Software',
 };
 
 // ─── Supabase client ───────────────────────────
@@ -285,10 +306,14 @@ function setupEvents() {
     loadAdminUsers();
   });
 
-  // ── Category cards
-  document.querySelectorAll('.cat-card').forEach(card =>
+  // ── Service cards
+  // Para añadir más: solo agrega el botón en HTML y la entrada en CAT_MAP
+  document.querySelectorAll('.svc-card').forEach(card =>
     card.addEventListener('click', () => {
-      currentCat = card.dataset.cat;
+      const svcKey = card.dataset.cat;
+      currentCat = svcKey;           // filtra por key del servicio
+      const name = card.querySelector('.svc-name').textContent;
+      document.getElementById('back-to-cats').textContent = '← ' + name;
       document.getElementById('cat-grid').classList.add('hidden');
       document.getElementById('products-panel').classList.remove('hidden');
       renderProducts();
@@ -336,9 +361,16 @@ async function loadProducts() {
 
 function renderProducts() {
   const grid = document.getElementById('products-grid');
+  // Filtra por clave de servicio usando CAT_MAP, o muestra todos
   const list = currentCat === 'all'
     ? allProducts
-    : allProducts.filter(p => p.category === currentCat);
+    : allProducts.filter(p => {
+        // Coincidencia exacta por nombre de servicio (key)
+        if (p.service === currentCat) return true;
+        // Fallback: por categoría genérica
+        const cat = CAT_MAP[currentCat];
+        return cat ? p.category === cat && p.service === currentCat : false;
+      });
 
   if (!list.length) {
     grid.innerHTML = '<div class="no-items">Sin productos en esta categoría</div>';
