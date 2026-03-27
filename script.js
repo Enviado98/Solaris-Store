@@ -818,12 +818,16 @@ function initAccountListeners() {
       document.getElementById('acct-username-input')?.focus();
       return;
     }
-    document.getElementById('acct-transfer-panel').classList.toggle('hidden');
+    const panel = document.getElementById('acct-transfer-panel');
+    const trigger = document.getElementById('acct-transfer-trigger');
+    const isOpen = panel.classList.toggle('open');
+    trigger.classList.toggle('active', isOpen);
     document.getElementById('acct-edit-form').classList.add('hidden');
   });
 
   document.getElementById('tr-cancel-btn')?.addEventListener('click', () => {
-    document.getElementById('acct-transfer-panel').classList.add('hidden');
+    document.getElementById('acct-transfer-panel').classList.remove('open');
+    document.getElementById('acct-transfer-trigger')?.classList.remove('active');
     document.getElementById('tr-username').value = '';
     document.getElementById('tr-amount').value   = '';
     document.getElementById('tr-user-feedback').textContent = '';
@@ -868,7 +872,8 @@ function initAccountListeners() {
     if (!form.classList.contains('hidden')) {
       document.getElementById('acct-username-input').value = currentProfile?.username || '';
       document.getElementById('acct-username-feedback').textContent = '';
-      document.getElementById('acct-transfer-panel').classList.add('hidden');
+      document.getElementById('acct-transfer-panel').classList.remove('open');
+    document.getElementById('acct-transfer-trigger')?.classList.remove('active');
     }
   });
 
@@ -996,7 +1001,8 @@ async function doTransfer() {
   toast(`✓ Enviaste $${amount.toFixed(2)} a @${username}`);
 
   // Limpiar panel
-  document.getElementById('acct-transfer-panel').classList.add('hidden');
+  document.getElementById('acct-transfer-panel').classList.remove('open');
+    document.getElementById('acct-transfer-trigger')?.classList.remove('active');
   document.getElementById('tr-username').value = '';
   document.getElementById('tr-amount').value   = '';
   fb.textContent = ''; fb.className = 'acct-user-feedback';
