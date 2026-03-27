@@ -366,6 +366,51 @@
         </div>
       </div>
 
+      <!-- ── CUENTA ──────────────────────────────────────────────────── -->
+      <div id="view-account" class="view">
+
+        <div class="acct-balance-card">
+          <div class="acct-balance-label">
+            <svg width="15" height="15"><use href="#ico-wallet"/></svg>
+            Balance disponible
+          </div>
+          <div class="acct-balance-amount" id="acct-balance-val">$0.00</div>
+          <div class="acct-balance-sub">USD · Solaris Store</div>
+        </div>
+
+        <div class="acct-section">
+          <div class="acct-section-title">Perfil</div>
+          <div class="acct-profile-row">
+            <div class="acct-avatar" id="acct-avatar-initials">?</div>
+            <div class="acct-profile-info">
+              <div class="acct-name" id="acct-name-display">—</div>
+              <div class="acct-email" id="acct-email-display">—</div>
+            </div>
+            <button class="acct-edit-btn" id="acct-edit-btn" title="Editar nombre">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+            </button>
+          </div>
+          <div class="acct-edit-form hidden" id="acct-edit-form">
+            <input type="text" class="input" id="acct-name-input" placeholder="Tu nombre completo" maxlength="60">
+            <div style="display:flex;gap:8px;margin-top:8px">
+              <button class="btn-primary" style="flex:1;padding:10px" id="acct-save-name">Guardar</button>
+              <button class="btn-secondary" style="flex:1;padding:10px" id="acct-cancel-name">Cancelar</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="acct-section">
+          <div class="acct-section-title">Historial</div>
+          <div class="acct-hist-tabs">
+            <button class="acct-hist-tab active" data-hist="compras">Compras</button>
+            <button class="acct-hist-tab" data-hist="recargas">Recargas</button>
+          </div>
+          <div id="acct-hist-compras" class="acct-hist-panel"><div class="acct-hist-empty">Cargando...</div></div>
+          <div id="acct-hist-recargas" class="acct-hist-panel hidden"><div class="acct-hist-empty">Cargando...</div></div>
+        </div>
+
+      </div>
+
     </main>
 
     <!-- BOTTOM NAV -->
@@ -382,7 +427,7 @@
         </span>
         <small>Carrito</small>
       </button>
-      <button class="bottom-btn" id="account-btn">
+      <button class="bottom-btn" data-view="account" id="account-btn">
         <span class="bottom-icon">
           <svg width="22" height="22"><use href="#ico-user"/></svg>
         </span>

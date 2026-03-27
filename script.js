@@ -260,12 +260,8 @@ function setupEvents() {
   // ── Account button (shows info)
   document.getElementById('account-btn').addEventListener('click', () => {
     if (!currentUser) return;
-    showModal('Mi cuenta',
-      `<p><b>Nombre:</b> ${currentProfile?.full_name || '—'}</p>
-       <p><b>Correo:</b> ${currentUser.email}</p>
-       <p style="margin-top:8px;font-size:1.1rem;color:var(--gold)"><b>Saldo:</b> $${parseFloat(currentWallet?.balance||0).toFixed(2)} USD</p>
-       <p style="font-size:0.78rem;color:var(--text-dim);margin-top:8px">¿Necesitas recargar? Contáctanos por WhatsApp.</p>`
-    );
+    showView('account');
+    renderAccountView();
   });
 
   // ── Hamburger menu
@@ -277,7 +273,8 @@ function setupEvents() {
   // ── Nav panel: Mi Cuenta
   document.getElementById('nav-account-btn').addEventListener('click', () => {
     closeNavPanel();
-    // Listo para recibir lógica de perfil
+    showView('account');
+    renderAccountView();
   });
 
   // ── Nav cart + admin (close panel on navigate)
@@ -733,3 +730,157 @@ function friendlyError(msg) {
   }, 3000);
 })();
 
+
+// ══════════════════════════════════════════════════
+//  VISTA CUENTA
+// ══════════════════════════════════════════════════
+function renderAccountView() {
+  // Balance
+  const bal = parseFloat(currentWallet?.balance || 0).toFixed(2);
+  const balEl = document.getElementById('acct-balance-val');
+  if (balEl) balEl.textContent = '$' + bal;
+
+  // Perfil
+  const name = currentProfile?.full_name || '';
+  const email = currentUser?.email || '';
+  const nameEl = document.getElementById('acct-name-display');
+  const emailEl = document.getElementById('acct-email-display');
+  const avatarEl = document.getElementById('acct-avatar-initials');
+  if (nameEl) nameEl.textContent = name || 'Sin nombre';
+  if (emailEl) emailEl.textContent = email;
+  if (avatarEl) {
+    const initials = name
+      ? name.trim().split(' ').slice(0, 2).map(w => w[0]).join('').toUpperCase()
+      : (email[0] || '?').toUpperCase();
+    avatarEl.textContent = initials;
+  }
+
+  // Edit name toggle
+  const editBtn = document.getElementById('acct-edit-btn');
+  const editForm = document.getElementById('acct-edit-form');
+  const nameInput = document.getElementById('acct-name-input');
+  const saveBtn = document.getElementById('acct-save-name');
+  const cancelBtn = document.getElementById('acct-cancel-name');
+
+  // Remove previous listeners by cloning nodes
+  if (editBtn) {
+    const newEditBtn = editBtn.cloneNode(true);
+    editBtn.parentNode.replaceChild(newEditBtn, editBtn);
+    newEditBtn.addEventListener('click', () => {
+      document.getElementById('acct-edit-form').classList.toggle('hidden');
+      document.getElementById('acct-name-input').value = currentProfile?.full_name || '';
+      document.getElementById('acct-name-input').focus();
+    });
+  }
+  if (saveBtn) {
+    const newSave = saveBtn.cloneNode(true);
+    saveBtn.parentNode.replaceChild(newSave, saveBtn);
+    newSave.addEventListener('click', async () => {
+      const newName = document.getElementById('acct-name-input').value.trim();
+      if (!newName) { toast('Escribe un nombre', 'error'); return; }
+      newSave.disabled = true; newSave.textContent = 'Guardando...';
+      const { error } = await db.from('profiles')
+        .update({ full_name: newName })
+        .eq('id', currentUser.id);
+      newSave.disabled = false; newSave.textContent = 'Guardar';
+      if (error) { toast('Error al guardar', 'error'); return; }
+      currentProfile.full_name = newName;
+      toast('Nombre actualizado ✓');
+      renderAccountView();
+    });
+  }
+  if (cancelBtn) {
+    const newCancel = cancelBtn.cloneNode(true);
+    cancelBtn.parentNode.replaceChild(newCancel, cancelBtn);
+    newCancel.addEventListener('click', () => {
+      document.getElementById('acct-edit-form').classList.add('hidden');
+    });
+  }
+
+  // Historial tabs
+  document.querySelectorAll('.acct-hist-tab').forEach(tab => {
+    const newTab = tab.cloneNode(true);
+    tab.parentNode.replaceChild(newTab, tab);
+    newTab.addEventListener('click', () => {
+      document.querySelectorAll('.acct-hist-tab').forEach(t => t.classList.remove('active'));
+      newTab.classList.add('active');
+      const which = newTab.dataset.hist;
+      document.querySelectorAll('.acct-hist-panel').forEach(p => p.classList.add('hidden'));
+      document.getElementById(`acct-hist-${which}`)?.classList.remove('hidden');
+    });
+  });
+
+  // Load history
+  loadAccountHistory();
+}
+
+async function loadAccountHistory() {
+  if (!currentUser) return;
+
+  // ── Compras ──
+  const comprasEl = document.getElementById('acct-hist-compras');
+  if (comprasEl) {
+    comprasEl.innerHTML = '<div class="acct-hist-empty">Cargando...</div>';
+    const { data: orders } = await db
+      .from('orders')
+      .select('*, products(name, price)')
+      .eq('user_id', currentUser.id)
+      .order('created_at', { ascending: false })
+      .limit(30);
+
+    if (!orders || orders.length === 0) {
+      comprasEl.innerHTML = '<div class="acct-hist-empty">Aún no has realizado compras.</div>';
+    } else {
+      comprasEl.innerHTML = orders.map(o => {
+        const pname = o.products?.name || 'Producto';
+        const amt   = parseFloat(o.amount_paid || o.products?.price || 0).toFixed(2);
+        const fecha = fmtDate(o.created_at);
+        return `<div class="acct-hist-item">
+          <div class="acct-hist-icon compra">🛒</div>
+          <div class="acct-hist-body">
+            <div class="acct-hist-name">${esc(pname)}</div>
+            <div class="acct-hist-date">${fecha}</div>
+          </div>
+          <div class="acct-hist-amount compra">-$${amt}</div>
+        </div>`;
+      }).join('');
+    }
+  }
+
+  // ── Recargas ──
+  const recargasEl = document.getElementById('acct-hist-recargas');
+  if (recargasEl) {
+    recargasEl.innerHTML = '<div class="acct-hist-empty">Cargando...</div>';
+    const { data: recargas } = await db
+      .from('wallet_topups')
+      .select('*')
+      .eq('user_id', currentUser.id)
+      .order('created_at', { ascending: false })
+      .limit(30);
+
+    // Si la tabla no existe o está vacía, mostramos mensaje genérico
+    if (!recargas || recargas.length === 0) {
+      recargasEl.innerHTML = '<div class="acct-hist-empty">No hay recargas registradas.</div>';
+    } else {
+      recargasEl.innerHTML = recargas.map(r => {
+        const amt   = parseFloat(r.amount || 0).toFixed(2);
+        const fecha = fmtDate(r.created_at);
+        const nota  = r.note || 'Recarga de saldo';
+        return `<div class="acct-hist-item">
+          <div class="acct-hist-icon recarga">💰</div>
+          <div class="acct-hist-body">
+            <div class="acct-hist-name">${esc(nota)}</div>
+            <div class="acct-hist-date">${fecha}</div>
+          </div>
+          <div class="acct-hist-amount recarga">+$${amt}</div>
+        </div>`;
+      }).join('');
+    }
+  }
+}
+
+function fmtDate(iso) {
+  if (!iso) return '—';
+  const d = new Date(iso);
+  return d.toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' });
+}
