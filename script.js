@@ -212,16 +212,12 @@ function setupEvents() {
 
   // ── Register
   document.getElementById('register-btn').addEventListener('click', async () => {
-    const name  = val('reg-name');
     const email = val('reg-email');
     const pass  = val('reg-password');
-    if (!name || !email || !pass) return setMsg('auth-msg', 'Completa todos los campos', 'error');
+    if (!email || !pass) return setMsg('auth-msg', 'Completa todos los campos', 'error');
     if (pass.length < 6) return setMsg('auth-msg', 'Mínimo 6 caracteres en contraseña', 'error');
     setBtn('register-btn', 'Creando...');
-    const { error } = await db.auth.signUp({
-      email, password: pass,
-      options: { data: { full_name: name } }
-    });
+    const { error } = await db.auth.signUp({ email, password: pass });
     setBtn('register-btn', 'Crear cuenta');
     if (error) setMsg('auth-msg', friendlyError(error.message), 'error');
     // Si no hay error, el onAuthStateChange se encarga de entrar automáticamente
@@ -563,11 +559,11 @@ async function loadAdminUsers() {
   el.innerHTML = data.map(u => `
     <div class="admin-item">
       <div class="admin-item-info">
-        <div class="admin-item-name">${esc(u.full_name || 'Sin nombre')}${u.is_admin ? ' 👑' : ''}</div>
+        <div class="admin-item-name">${u.username ? '@' + esc(u.username) : esc(u.email)}${u.is_admin ? ' 👑' : ''}</div>
         <div class="admin-item-meta">${esc(u.email || '')} · Saldo: $${price(u.wallets?.balance || 0)}</div>
       </div>
       <div class="admin-item-actions">
-        <button class="btn-credit" onclick="openCreditModal('${u.id}', '${esc(u.full_name || u.email)}')">
+        <button class="btn-credit" onclick="openCreditModal('${u.id}', '${esc(u.username ? '@' + u.username : u.email)}')">
           + Crédito
         </button>
       </div>
@@ -743,21 +739,16 @@ function renderAccountView() {
   document.getElementById('acct-balance-val').textContent = '$' + bal;
 
   // Perfil
-  const name     = currentProfile?.full_name || '';
   const username = currentProfile?.username  || '';
   const email    = currentUser?.email || '';
 
-  document.getElementById('acct-name-display').textContent     = name || 'Sin nombre';
   document.getElementById('acct-email-display').textContent    = email;
 
   const uDisp = document.getElementById('acct-username-display');
   uDisp.textContent = username ? '@' + username : 'Sin username';
 
   const avatarEl = document.getElementById('acct-avatar-initials');
-  const initials = name
-    ? name.trim().split(' ').slice(0,2).map(w=>w[0]).join('').toUpperCase()
-    : (email[0]||'?').toUpperCase();
-  avatarEl.textContent = initials;
+  avatarEl.textContent = (username[0] || email[0] || '?').toUpperCase();
 
   // ── Transferir toggle ──
   _bindOnce('acct-transfer-trigger', 'click', () => {
@@ -791,7 +782,6 @@ function renderAccountView() {
     const form = document.getElementById('acct-edit-form');
     form.classList.toggle('hidden');
     if (!form.classList.contains('hidden')) {
-      document.getElementById('acct-name-input').value     = currentProfile?.full_name || '';
       document.getElementById('acct-username-input').value = currentProfile?.username  || '';
       document.getElementById('acct-username-feedback').textContent = '';
       document.getElementById('acct-transfer-panel').classList.add('hidden');
@@ -929,14 +919,13 @@ async function doTransfer() {
 
 async function doSaveProfile() {
   const btn      = document.getElementById('acct-save-name');
-  const newName  = document.getElementById('acct-name-input').value.trim();
   const newUser  = document.getElementById('acct-username-input').value.trim().toLowerCase();
   const fb       = document.getElementById('acct-username-feedback');
 
-  if (!newName) { toast('Escribe tu nombre', 'error'); return; }
+  if (!newUser) { toast('Escribe un username', 'error'); return; }
 
   // Validar username si cambió
-  if (newUser && newUser !== currentProfile?.username) {
+  if (newUser !== currentProfile?.username) {
     if (!/^[a-z0-9._]{3,20}$/.test(newUser)) {
       toast('Username inválido', 'error'); return;
     }
@@ -950,11 +939,8 @@ async function doSaveProfile() {
   }
 
   btn.disabled = true; btn.textContent = 'Guardando...';
-  const updates = { full_name: newName };
-  if (newUser) updates.username = newUser;
-
   const { error } = await db.from('profiles')
-    .update(updates)
+    .update({ username: newUser })
     .eq('id', currentUser.id);
 
   btn.disabled = false; btn.textContent = 'Guardar';
@@ -968,9 +954,8 @@ async function doSaveProfile() {
     return;
   }
 
-  currentProfile.full_name = newName;
-  if (newUser) currentProfile.username = newUser;
-  toast('Perfil actualizado ✓');
+  currentProfile.username = newUser;
+  toast('Username actualizado ✓');
   document.getElementById('acct-edit-form').classList.add('hidden');
   renderAccountView();
 }
