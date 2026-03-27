@@ -621,6 +621,7 @@ function showView(name) {
   document.getElementById(`view-${name}`)?.classList.add('active');
   document.querySelectorAll('.bottom-btn').forEach(b => b.classList.remove('active'));
   document.querySelector(`.bottom-btn[data-view="${name}"]`)?.classList.add('active');
+  document.getElementById('navbar').style.display = '';
   if (name === 'cart') renderCart();
   if (name === 'catalog') {
     // Siempre volver a la grilla de categorías al entrar al catálogo
@@ -633,6 +634,7 @@ function showView(name) {
 function showAuthView() {
   document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
   document.getElementById('view-auth').classList.add('active');
+  document.getElementById('navbar').style.display = 'none';
   // One Tap desactivado — se usa solo el botón OAuth manual
 }
 
