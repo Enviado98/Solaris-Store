@@ -1076,6 +1076,42 @@ async function doSaveProfile() {
   renderAccountView();
 }
 
+
+// ─── Historia: SVG icons por tipo ──────────────────
+function histIcon(type) {
+  const icons = {
+    compra: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/>
+      <path d="M1 1h4l2.68 13.39a2 2 0 001.99 1.61h9.72a2 2 0 001.99-1.61L23 6H6"/>
+    </svg>`,
+    topup: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+      <rect x="2" y="5" width="20" height="14" rx="2"/>
+      <line x1="2" y1="10" x2="22" y2="10"/>
+    </svg>`,
+    transfer_in: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+      <line x1="12" y1="19" x2="12" y2="5"/>
+      <polyline points="5 12 12 19 19 12"/>
+    </svg>`,
+    transfer_out: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+      <line x1="12" y1="5" x2="12" y2="19"/>
+      <polyline points="19 12 12 5 5 12"/>
+    </svg>`,
+  };
+  return icons[type] || icons.topup;
+}
+
+function histIconClass(type) {
+  if (type === 'compra')       return 'type-compra';
+  if (type === 'topup')        return 'type-topup';
+  if (type === 'transfer_in')  return 'type-in';
+  if (type === 'transfer_out') return 'type-out';
+  return 'type-topup';
+}
+
+function histAmountClass(type, amt) {
+  if (type === 'transfer_out') return 'out';
+  return amt >= 0 ? 'pos' : 'neg';
+}
 async function loadAccountHistory() {
   if (!currentUser) return;
 
@@ -1088,22 +1124,22 @@ async function loadAccountHistory() {
       .select('*, products(name, price)')
       .eq('user_id', currentUser.id)
       .order('created_at', { ascending: false })
-      .limit(30);
+      .limit(20);
 
     if (!orders || orders.length === 0) {
       comprasEl.innerHTML = '<div class="acct-hist-empty">Aún no has realizado compras.</div>';
     } else {
-      comprasEl.innerHTML = orders.map(o => {
+      comprasEl.innerHTML = orders.slice(0, 20).map(o => {
         const pname = o.products?.name || 'Producto';
         const amt   = parseFloat(o.amount_paid || o.products?.price || 0).toFixed(2);
         const fecha = fmtDate(o.created_at);
         return `<div class="acct-hist-item">
-          <div class="acct-hist-icon compra">🛒</div>
+          <div class="acct-hist-icon type-compra">${histIcon('compra')}</div>
           <div class="acct-hist-body">
             <div class="acct-hist-name">${esc(pname)}</div>
             <div class="acct-hist-date">${fecha}</div>
           </div>
-          <div class="acct-hist-amount compra">-$${amt}</div>
+          <div class="acct-hist-amount neg">-$${amt}</div>
         </div>`;
       }).join('');
     }
@@ -1118,26 +1154,23 @@ async function loadAccountHistory() {
       .select('*')
       .eq('user_id', currentUser.id)
       .order('created_at', { ascending: false })
-      .limit(40);
+      .limit(20);
 
     if (!movs || movs.length === 0) {
       recargasEl.innerHTML = '<div class="acct-hist-empty">Sin movimientos registrados.</div>';
     } else {
-      const iconMap = { topup: '💰', transfer_in: '📥', transfer_out: '📤' };
-      recargasEl.innerHTML = movs.map(m => {
-        const amt    = parseFloat(m.amount || 0);
-        const sign   = amt >= 0 ? '+' : '';
-        const cls    = amt >= 0 ? 'recarga' : 'compra';
-        const icon   = iconMap[m.type] || '💰';
-        const fecha  = fmtDate(m.created_at);
-        const nota   = m.note || 'Movimiento';
+      recargasEl.innerHTML = movs.slice(0, 20).map(m => {
+        const amt   = parseFloat(m.amount || 0);
+        const sign  = m.type === 'transfer_out' ? '-' : (amt >= 0 ? '+' : '');
+        const fecha = fmtDate(m.created_at);
+        const nota  = m.note || (m.type === 'transfer_in' ? 'Recibido' : m.type === 'transfer_out' ? 'Enviado' : 'Recarga');
         return `<div class="acct-hist-item">
-          <div class="acct-hist-icon ${cls}">${icon}</div>
+          <div class="acct-hist-icon ${histIconClass(m.type)}">${histIcon(m.type)}</div>
           <div class="acct-hist-body">
             <div class="acct-hist-name">${esc(nota)}</div>
             <div class="acct-hist-date">${fecha}</div>
           </div>
-          <div class="acct-hist-amount ${cls}">${sign}$${Math.abs(amt).toFixed(2)}</div>
+          <div class="acct-hist-amount ${histAmountClass(m.type, amt)}">${sign}$${Math.abs(amt).toFixed(2)}</div>
         </div>`;
       }).join('');
     }
