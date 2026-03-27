@@ -1265,7 +1265,7 @@ textarea.input { resize: vertical; min-height: 80px; }
   padding: 18px 16px;
   margin-bottom: 14px;
 }
-.acct-transfer-panel.hidden { display: none; }
+/* .hidden no se usa en el panel de transferencia — se controla con .open */
 .acct-transfer-field { margin-bottom: 12px; }
 .acct-field-label {
   display: block;
