@@ -166,25 +166,125 @@
       <div id="view-catalog" class="view">
         <div class="view-header">
           <h1>Tienda</h1>
-          <p>Selecciona el plan que necesitas</p>
+          <p>Selecciona lo que necesitas</p>
         </div>
 
-        <!-- ══ TABS DE CATEGORÍA ══════════════════════════════ -->
-        <div class="cat-tabs-wrap">
-          <div class="cat-tabs" id="cat-tabs">
-            <button class="cat-tab active" data-filter="all">Todos</button>
-            <button class="cat-tab" data-filter="Streaming">📺 Streaming</button>
-            <button class="cat-tab" data-filter="Musica">🎵 Música</button>
-            <button class="cat-tab" data-filter="Gaming">🎮 Gaming</button>
-            <button class="cat-tab" data-filter="Software">💻 Software</button>
-            <button class="cat-tab" data-filter="Internet">🌐 Internet</button>
+        <!-- ══ SECCIONES DE CATEGORÍA ══════════════════════════ -->
+        <div class="store-layout">
+
+          <!-- Fila superior: Streaming + Música -->
+          <div class="store-row">
+
+            <!-- STREAMING -->
+            <div class="cat-section" id="cat-streaming">
+              <div class="cat-section-header">
+                <span class="iconify cat-section-icon" data-icon="material-symbols:tv-play-outline-rounded" style="color:#E50914"></span>
+                <div class="cat-section-info">
+                  <span class="cat-section-title">Streaming</span>
+                  <span class="cat-section-sub">Series, películas y más</span>
+                </div>
+                <span class="cat-section-arrow">›</span>
+              </div>
+              <div class="cat-section-items">
+                <button class="svc-chip" data-cat="Netflix"><span class="iconify" data-icon="simple-icons:netflix" style="color:#E50914"></span>Netflix</button>
+                <button class="svc-chip" data-cat="HBO"><span class="iconify" data-icon="simple-icons:hbo" style="color:#9900FF"></span>HBO Max</button>
+                <button class="svc-chip" data-cat="Disney"><img src="icons/disney-plus.svg" width="16" height="16" style="object-fit:contain;vertical-align:middle">Disney+</button>
+                <button class="svc-chip" data-cat="PrimeVideo"><span class="iconify" data-icon="simple-icons:primevideo" style="color:#00A8E1"></span>Prime</button>
+                <button class="svc-chip" data-cat="Paramount"><span class="iconify" data-icon="simple-icons:paramountplus" style="color:#fff"></span>Paramount+</button>
+                <button class="svc-chip" data-cat="Crunchyroll"><span class="iconify" data-icon="simple-icons:crunchyroll" style="color:#F47521"></span>Crunchyroll</button>
+                <button class="svc-chip" data-cat="Vix"><img src="icons/vix.svg" width="16" height="16" style="object-fit:contain;vertical-align:middle">Vix</button>
+                <button class="svc-chip" data-cat="Mubi"><span class="iconify" data-icon="simple-icons:mubi" style="color:#fff"></span>Mubi</button>
+                <button class="svc-chip" data-cat="FoxOne"><span class="iconify" data-icon="simple-icons:fox" style="color:#fff"></span>Fox One</button>
+                <button class="svc-chip" data-cat="UniversalPlus"><img src="icons/universal-plus.svg" width="16" height="16" style="object-fit:contain;vertical-align:middle">Universal+</button>
+                <button class="svc-chip" data-cat="OleadaTV"><span class="iconify" data-icon="material-symbols:live-tv-outline"></span>Oleada TV</button>
+                <button class="svc-chip" data-cat="IPTVSmarters"><span class="iconify" data-icon="material-symbols:play-circle-outline"></span>IPTV</button>
+              </div>
+            </div>
+
+            <!-- MÚSICA -->
+            <div class="cat-section" id="cat-musica">
+              <div class="cat-section-header">
+                <span class="iconify cat-section-icon" data-icon="material-symbols:music-note-outline-rounded" style="color:#1DB954"></span>
+                <div class="cat-section-info">
+                  <span class="cat-section-title">Música</span>
+                  <span class="cat-section-sub">Audio sin límites</span>
+                </div>
+                <span class="cat-section-arrow">›</span>
+              </div>
+              <div class="cat-section-items">
+                <button class="svc-chip" data-cat="Spotify"><span class="iconify" data-icon="simple-icons:spotify" style="color:#1DB954"></span>Spotify</button>
+                <button class="svc-chip" data-cat="YouTubePremium"><span class="iconify" data-icon="simple-icons:youtube" style="color:#FF0000"></span>YouTube</button>
+                <button class="svc-chip" data-cat="AmazonMusic"><span class="iconify" data-icon="simple-icons:amazonmusic" style="color:#00A8E1"></span>Amazon Music</button>
+              </div>
+            </div>
+
+          </div><!-- /store-row -->
+
+          <!-- Fila media: Gaming + Software -->
+          <div class="store-row">
+
+            <!-- GAMING -->
+            <div class="cat-section" id="cat-gaming">
+              <div class="cat-section-header">
+                <span class="iconify cat-section-icon" data-icon="material-symbols:sports-esports-outline-rounded" style="color:#107C10"></span>
+                <div class="cat-section-info">
+                  <span class="cat-section-title">Gaming</span>
+                  <span class="cat-section-sub">Juega sin parar</span>
+                </div>
+                <span class="cat-section-arrow">›</span>
+              </div>
+              <div class="cat-section-items">
+                <button class="svc-chip" data-cat="GamepassCore"><span class="iconify" data-icon="simple-icons:xbox" style="color:#107C10"></span>Gamepass Core</button>
+                <button class="svc-chip" data-cat="GamepassUlt"><span class="iconify" data-icon="simple-icons:xbox" style="color:#52B043"></span>Gamepass Ult.</button>
+              </div>
+            </div>
+
+            <!-- SOFTWARE -->
+            <div class="cat-section" id="cat-software">
+              <div class="cat-section-header">
+                <span class="iconify cat-section-icon" data-icon="material-symbols:deployed-code-outline" style="color:#0078D4"></span>
+                <div class="cat-section-info">
+                  <span class="cat-section-title">Software</span>
+                  <span class="cat-section-sub">Apps y herramientas</span>
+                </div>
+                <span class="cat-section-arrow">›</span>
+              </div>
+              <div class="cat-section-items">
+                <button class="svc-chip" data-cat="ChatGPT"><span class="iconify" data-icon="simple-icons:openai" style="color:#10A37F"></span>ChatGPT+</button>
+                <button class="svc-chip" data-cat="Canva"><span class="iconify" data-icon="simple-icons:canva" style="color:#00C4CC"></span>Canva Pro</button>
+                <button class="svc-chip" data-cat="Office"><span class="iconify" data-icon="simple-icons:microsoftoffice" style="color:#D83B01"></span>Office 365</button>
+                <button class="svc-chip" data-cat="Windows11"><span class="iconify" data-icon="simple-icons:windows11" style="color:#0078D4"></span>Windows 11</button>
+                <button class="svc-chip" data-cat="Windows10"><span class="iconify" data-icon="simple-icons:windows" style="color:#0078D4"></span>Windows 10</button>
+              </div>
+            </div>
+
+          </div><!-- /store-row -->
+
+          <!-- Fila ancha: Internet Gratis -->
+          <div class="store-row store-row-full">
+            <div class="cat-section cat-section-wide" id="cat-internet">
+              <div class="cat-section-header">
+                <span class="iconify cat-section-icon" data-icon="material-symbols:wifi-outline-rounded" style="color:#00C4CC"></span>
+                <div class="cat-section-info">
+                  <span class="cat-section-title">Internet Gratis</span>
+                  <span class="cat-section-sub">Navega sin gastar datos</span>
+                </div>
+                <span class="cat-section-arrow">›</span>
+              </div>
+            </div>
+          </div><!-- /store-row-full -->
+
+        </div><!-- /store-layout -->
+
+        <!-- Panel de productos (se abre al pulsar una sección o chip) -->
+        <div id="products-panel" class="products-panel hidden">
+          <button id="back-to-cats" class="back-btn">← Tienda</button>
+          <div class="products-panel-title" id="products-panel-title"></div>
+          <div id="products-grid" class="products-grid">
+            <div class="loading-state">Cargando productos...</div>
           </div>
         </div>
 
-        <!-- ══ GRID DE PRODUCTOS DIRECTO ══════════════════════ -->
-        <div id="products-grid" class="products-grid">
-          <div class="loading-state">Cargando productos...</div>
-        </div>
       </div>
       <!-- ── CART ───────────────────────────────────────────────── -->
       <div id="view-cart" class="view">
@@ -244,11 +344,13 @@
             <input type="text" id="ap-name" placeholder="Nombre del producto" class="input">
             <select id="ap-category" class="input">
               <option value="">Categoría...</option>
-              <option value="Streaming">📺 Streaming</option>
-              <option value="Musica">🎵 Música</option>
-              <option value="Gaming">🎮 Gaming</option>
-              <option value="Software">💻 Software</option>
-              <option value="Internet">🌐 Internet</option>
+              <option value="Netflix">Netflix</option>
+              <option value="HBO">HBO</option>
+              <option value="Spotify">Spotify</option>
+              <option value="Internet">Internet</option>
+              <option value="Office">Office</option>
+              <option value="VPN">VPN</option>
+              <option value="Otro">Otro</option>
             </select>
             <input type="text" id="ap-desc" placeholder="Descripción breve" class="input">
             <div class="input-row">

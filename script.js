@@ -42,45 +42,26 @@ const CAT_MAP = {
   Office:         'Software',
   Windows11:      'Software',
   Windows10:      'Software',
-  // Internet
-  InternetGratis: 'Internet',
 };
 
-// Emoji por categoría (fallback para admin list)
+// Emoji por categoría (admin y fallback)
 const CAT_EMOJI = {
-  Streaming: '📺',
-  Musica:    '🎵',
-  Gaming:    '🎮',
-  Software:  '💻',
-  Internet:  '🌐',
+  Streaming: '📺', Musica: '🎵', Gaming: '🎮', Software: '💻', Internet: '🌐',
 };
 
-// Icono iconify + color + bg por servicio para las product cards
-const SVC_ICON = {
-  Netflix:        { icon: 'simple-icons:netflix',          color: '#E50914', bg: '#141414' },
-  Vix:            { img:  'icons/vix.svg',                              bg: '#0055CC' },
-  HBO:            { icon: 'simple-icons:hbo',              color: '#9900FF', bg: '#1a0033' },
-  Disney:         { img:  'icons/disney-plus.svg',                      bg: '#0C1A6B' },
-  Paramount:      { icon: 'simple-icons:paramountplus',    color: '#ffffff', bg: '#0032A0' },
-  PrimeVideo:     { icon: 'simple-icons:primevideo',       color: '#00A8E1', bg: '#00253D' },
-  Crunchyroll:    { icon: 'simple-icons:crunchyroll',      color: '#F47521', bg: '#1a0d00' },
-  OleadaTV:       { svg: `<svg viewBox="0 0 36 36" width="36" height="36" fill="none"><rect x="4" y="8" width="28" height="18" rx="3" stroke="white" stroke-width="2"/><path d="M12 13 Q18 20 24 13" stroke="#F0A500" stroke-width="2.5" stroke-linecap="round" fill="none"/><line x1="16" y1="26" x2="20" y2="26" stroke="white" stroke-width="2" stroke-linecap="round"/></svg>`, bg: '#0d1a2e' },
-  UniversalPlus:  { img:  'icons/universal-plus.svg',                   bg: '#111111' },
-  Mubi:           { icon: 'simple-icons:mubi',             color: '#ffffff', bg: '#0E1826' },
-  FoxOne:         { icon: 'simple-icons:fox',              color: '#ffffff', bg: '#1a0005' },
-  IPTVSmarters:   { svg: `<svg viewBox="0 0 36 36" width="36" height="36" fill="none"><rect x="3" y="7" width="30" height="20" rx="3" stroke="white" stroke-width="2"/><polygon points="14,13 14,21 23,17" fill="white"/><line x1="10" y1="30" x2="26" y2="30" stroke="white" stroke-width="2" stroke-linecap="round"/></svg>`, bg: '#1a1a1a' },
-  Spotify:        { icon: 'simple-icons:spotify',          color: '#1DB954', bg: '#0d1f0d' },
-  YouTubePremium: { icon: 'simple-icons:youtube',          color: '#FF0000', bg: '#1a0000' },
-  AmazonMusic:    { icon: 'simple-icons:amazonmusic',      color: '#00A8E1', bg: '#001a21' },
-  GamepassCore:   { icon: 'simple-icons:xbox',             color: '#107C10', bg: '#0a1a0a' },
-  GamepassUlt:    { icon: 'simple-icons:xbox',             color: '#52B043', bg: '#061206' },
-  ChatGPT:        { icon: 'simple-icons:openai',           color: '#10A37F', bg: '#0a1f19' },
-  Canva:          { icon: 'simple-icons:canva',            color: '#00C4CC', bg: '#0d0021' },
-  Office:         { icon: 'simple-icons:microsoftoffice',  color: '#D83B01', bg: '#2b0d00' },
-  Windows11:      { icon: 'simple-icons:windows11',        color: '#0078D4', bg: '#001428' },
-  Windows10:      { icon: 'simple-icons:windows',          color: '#0078D4', bg: '#001428' },
-  InternetGratis: { svg: `<svg viewBox="0 0 36 36" width="36" height="36" fill="none"><circle cx="18" cy="18" r="14" stroke="#00C4CC" stroke-width="2"/><path d="M18 4 Q12 18 18 32 Q24 18 18 4" stroke="#00C4CC" stroke-width="1.5" fill="none"/><line x1="4" y1="18" x2="32" y2="18" stroke="#00C4CC" stroke-width="1.5"/></svg>`, bg: '#001a1f' },
+// Nombre bonito de categoría por svc key
+const SVC_CAT_LABEL = {
+  Netflix:'Streaming', Vix:'Streaming', HBO:'Streaming', Disney:'Streaming',
+  Paramount:'Streaming', PrimeVideo:'Streaming', Crunchyroll:'Streaming',
+  OleadaTV:'Streaming', UniversalPlus:'Streaming', Mubi:'Streaming',
+  FoxOne:'Streaming', IPTVSmarters:'Streaming',
+  Spotify:'Música', YouTubePremium:'Música', AmazonMusic:'Música',
+  GamepassCore:'Gaming', GamepassUlt:'Gaming',
+  ChatGPT:'Software', Canva:'Software', Office:'Software',
+  Windows11:'Software', Windows10:'Software',
+  InternetGratis:'Internet',
 };
+
 
 // ─── Supabase client ───────────────────────────
 if (!window.supabase) {
@@ -357,20 +338,47 @@ function setupEvents() {
     }
   });
 
-  // ── Category tabs
-  document.querySelectorAll('.cat-tab').forEach(tab =>
-    tab.addEventListener('click', () => {
-      document.querySelectorAll('.cat-tab').forEach(t => t.classList.remove('active'));
-      tab.classList.add('active');
-      currentCat = tab.dataset.filter;
-      const grid = document.getElementById('products-grid');
-      grid.classList.add('filtering');
-      setTimeout(() => {
-        renderProducts();
-        grid.classList.remove('filtering');
-      }, 120);
+  // ── Chips de servicio (filtran por svc key)
+  document.querySelectorAll('.svc-chip').forEach(chip =>
+    chip.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (window._triggerLogoPulse) window._triggerLogoPulse();
+      currentCat = chip.dataset.cat;
+      const label = SVC_CAT_LABEL[currentCat] || currentCat;
+      document.getElementById('products-panel-title').textContent = chip.textContent.trim();
+      openProductsPanel();
     })
   );
+
+  // ── Secciones completas (filtran por categoría genérica)
+  document.querySelectorAll('.cat-section').forEach(sec =>
+    sec.addEventListener('click', () => {
+      if (window._triggerLogoPulse) window._triggerLogoPulse();
+      const catMap = {
+        'cat-streaming': 'Streaming',
+        'cat-musica':    'Musica',
+        'cat-gaming':    'Gaming',
+        'cat-software':  'Software',
+        'cat-internet':  'Internet',
+      };
+      currentCat = catMap[sec.id] || 'all';
+      const titleMap = {
+        'cat-streaming': '📺 Streaming',
+        'cat-musica':    '🎵 Música',
+        'cat-gaming':    '🎮 Gaming',
+        'cat-software':  '💻 Software',
+        'cat-internet':  '🌐 Internet Gratis',
+      };
+      document.getElementById('products-panel-title').textContent = titleMap[sec.id] || '';
+      openProductsPanel();
+    })
+  );
+
+  document.getElementById('back-to-cats').addEventListener('click', () => {
+    document.getElementById('products-panel').classList.add('hidden');
+    document.querySelector('.store-layout')?.classList.remove('hidden');
+    currentCat = 'all';
+  });
 
   // ── Checkout
   document.getElementById('checkout-btn').addEventListener('click', doCheckout);
@@ -406,44 +414,41 @@ async function loadProducts() {
   renderProducts();
 }
 
+function openProductsPanel() {
+  document.querySelector('.store-layout').classList.add('hidden');
+  document.getElementById('products-panel').classList.remove('hidden');
+  renderProducts();
+}
+
 function renderProducts() {
   const grid = document.getElementById('products-grid');
+  // currentCat puede ser: svc key (ej "Netflix"), categoría genérica (ej "Streaming"), o "all"
+  const genericCats = ['Streaming', 'Musica', 'Gaming', 'Software', 'Internet'];
   const list = currentCat === 'all'
     ? allProducts
-    : allProducts.filter(p => p.category === currentCat);
+    : genericCats.includes(currentCat)
+      ? allProducts.filter(p => p.category === currentCat)
+      : allProducts.filter(p => p.service === currentCat);
 
   if (!list.length) {
-    grid.innerHTML = '<div class="no-items">Sin productos en esta categoría</div>';
+    grid.innerHTML = '<div class="no-items">Sin productos disponibles</div>';
     return;
   }
 
   grid.innerHTML = list.map(p => {
-    const svc  = SVC_ICON[p.service] || {};
-    const bg   = svc.bg || '#1a1a2e';
-    const catLabel = p.category || '';
-
-    let logoHtml = '';
-    if (svc.img)       logoHtml = `<img src="${svc.img}" alt="${esc(p.service)}" width="38" height="38" style="object-fit:contain">`;
-    else if (svc.icon) logoHtml = `<span class="iconify" data-icon="${svc.icon}" style="color:${svc.color||'#fff'}"></span>`;
-    else if (svc.svg)  logoHtml = svc.svg;
-    else               logoHtml = `<span style="font-size:1.8rem">${CAT_EMOJI[p.category]||'⭐'}</span>`;
-
+    const emoji = CAT_EMOJI[p.category] || '⭐';
     return `
       <div class="product-card">
-        <div class="product-header" style="--svc-color:${bg}">
-          ${logoHtml}
-          <span class="product-cat-badge">${catLabel}</span>
-        </div>
-        <div class="product-body">
-          <div class="product-name">${esc(p.name)}</div>
-          ${p.description ? `<div class="product-desc">${esc(p.description)}</div>` : ''}
-          <div class="product-footer">
-            <div class="product-price-block">
-              <div class="product-price">$${price(p.price)}</div>
-              <div class="product-days">${p.duration_days} días</div>
-            </div>
-            <button class="btn-add-cart" onclick="addToCart('${p.id}')">+ Carrito</button>
+        <div class="product-emoji">${emoji}</div>
+        <div class="product-cat">${p.category}</div>
+        <div class="product-name">${esc(p.name)}</div>
+        ${p.description ? `<div class="product-desc">${esc(p.description)}</div>` : ''}
+        <div class="product-footer">
+          <div class="product-price-block">
+            <div class="product-price">$${price(p.price)}</div>
+            <div class="product-days">${p.duration_days} días</div>
           </div>
+          <button class="btn-add-cart" onclick="addToCart('${p.id}')">+ Carrito</button>
         </div>
       </div>`;
   }).join('');
@@ -684,11 +689,9 @@ function showView(name) {
   sessionStorage.setItem('solaris_view', name);
   if (name === 'cart') renderCart();
   if (name === 'catalog') {
-    // Reset tab selection to "Todos" when switching to catalog
-    document.querySelectorAll('.cat-tab').forEach(t => t.classList.remove('active'));
-    document.querySelector('.cat-tab[data-filter="all"]')?.classList.add('active');
+    document.querySelector('.store-layout')?.classList.remove('hidden');
+    document.getElementById('products-panel')?.classList.add('hidden');
     currentCat = 'all';
-    renderProducts();
   }
 }
 
