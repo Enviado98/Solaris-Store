@@ -752,6 +752,13 @@ function renderAccountView() {
 
   // ── Transferir toggle ──
   _bindOnce('acct-transfer-trigger', 'click', () => {
+    if (!currentProfile?.username) {
+      toast('Debes configurar tu @usuario antes de transferir', 'error');
+      // Abrir el form de editar perfil directamente
+      document.getElementById('acct-edit-form').classList.remove('hidden');
+      document.getElementById('acct-username-input').focus();
+      return;
+    }
     document.getElementById('acct-transfer-panel').classList.toggle('hidden');
     document.getElementById('acct-edit-form').classList.add('hidden');
   });
@@ -842,19 +849,16 @@ function _bindOnce(id, event, fn) {
 }
 
 async function checkTransferUser(username, fb) {
-  const { data } = await db.from('check_username').rpc
-    ? db.rpc('check_username', { p_username: username })
-    : { data: null };
-
-  // Usar RPC correctamente
   const res = await db.rpc('check_username', { p_username: username });
-  if (res.data?.available === false && res.data?.reason !== 'formato_invalido') {
-    // Usuario existe (username tomado = destinatario encontrado para transferencia)
-    fb.textContent = '✓ Usuario encontrado';
-    fb.className = 'acct-user-feedback ok';
-  } else if (res.data?.reason === 'formato_invalido') {
+  if (!res.data) { fb.textContent = 'Error buscando usuario'; fb.className = 'acct-user-feedback error'; return; }
+
+  if (res.data.reason === 'formato_invalido') {
     fb.textContent = 'Usuario inválido';
     fb.className = 'acct-user-feedback error';
+  } else if (res.data.available === false) {
+    // available=false significa que ESE username YA EXISTE → destinatario encontrado
+    fb.textContent = '✓ Usuario encontrado';
+    fb.className = 'acct-user-feedback ok';
   } else {
     fb.textContent = 'Usuario no encontrado';
     fb.className = 'acct-user-feedback error';
