@@ -119,7 +119,10 @@ async function handleLogin(user) {
     document.getElementById(id).classList.remove('hidden')
   );
   document.getElementById('bottom-nav').classList.remove('hidden');
-  showView('catalog');
+
+  // Restaurar la vista donde el usuario estaba antes de minimizar/suspender
+  const savedView = sessionStorage.getItem('solaris_view') || 'catalog';
+  showView(savedView);
   loadProducts();
 
   // Cargar profile y wallet en paralelo en segundo plano
@@ -133,6 +136,9 @@ async function handleLogin(user) {
     document.getElementById('nav-admin-btn').classList.remove('hidden');
   syncBalanceUI();
   syncCartCount();
+
+  // Si el usuario estaba en la vista de cuenta, renderizarla ahora que tenemos los datos
+  if (savedView === 'account') renderAccountView();
 }
 
 // ── Logout screen helpers
@@ -1125,7 +1131,14 @@ function histAmountClass(type, amt) {
   return amt >= 0 ? 'pos' : 'neg';
 }
 async function loadAccountHistory() {
-  if (!currentUser) return;
+  if (!currentUser) {
+    // Si no hay usuario, limpiar los "Cargando..." para no dejarlos colgados
+    const comprasEl  = document.getElementById('acct-hist-compras');
+    const recargasEl = document.getElementById('acct-hist-recargas');
+    if (comprasEl)  comprasEl.innerHTML  = '<div class="acct-hist-empty">Inicia sesión para ver tu historial.</div>';
+    if (recargasEl) recargasEl.innerHTML = '<div class="acct-hist-empty">Inicia sesión para ver tu historial.</div>';
+    return;
+  }
 
   // ── Compras ──
   const comprasEl = document.getElementById('acct-hist-compras');
@@ -1191,17 +1204,33 @@ async function loadAccountHistory() {
 }
 
 // ─── Reanudar historial si la pestaña se suspendió a mitad de carga ──
-document.addEventListener('visibilitychange', () => {
+document.addEventListener('visibilitychange', async () => {
   if (document.visibilityState !== 'visible') return;
-  if (!currentUser) return;
+
+  // Si no hay sesión activa, nada que restaurar
+  if (!currentUser) {
+    // Esperar a que Supabase resuelva la sesión (puede tardar ~1s al reactivar)
+    const { data: { session } } = await db.auth.getSession().catch(() => ({ data: { session: null } }));
+    if (!session) return;
+    // Si hay sesión pero currentUser aún es null, esperar al onAuthStateChange
+    return;
+  }
 
   const saved = sessionStorage.getItem('solaris_view');
 
   // Restaurar la vista donde el usuario estaba
   if (saved) showView(saved);
 
-  // Si estaba en cuenta, recargar historial fresco
-  if (saved === 'account') renderAccountView();
+  // Si estaba en cuenta, recargar historial fresco con datos actuales
+  if (saved === 'account') {
+    // Refrescar profile y wallet por si cambiaron mientras estaba minimizado
+    [currentProfile, currentWallet] = await Promise.all([
+      fetchProfile(currentUser.id),
+      fetchWallet(currentUser.id),
+    ]);
+    syncBalanceUI();
+    renderAccountView();
+  }
 });
 
 
@@ -1210,3 +1239,4 @@ function fmtDate(iso) {
   const d = new Date(iso);
   return d.toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' });
 }
+
