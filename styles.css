@@ -63,7 +63,7 @@ body::before {
 }
 .loader-hex svg { width: 48px; height: 48px; }
 .loader-logo {
-  font-family: 'Orbitron', sans-serif;
+  font-family: 'Rajdhani', sans-serif;
   font-weight: 900;
   font-size: 1.8rem;
   color: var(--gold);
@@ -145,11 +145,11 @@ body::before {
   100% { left: 140%; opacity: 0; }
 }
 .nav-logo { display: flex; align-items: center; gap: 8px;
-  font-family: 'Orbitron', sans-serif;
-  font-weight: 900;
-  font-size: 1.15rem;
+  font-family: 'Rajdhani', sans-serif;
+  font-weight: 700;
+  font-size: 1.35rem;
   color: #7a4800;
-  letter-spacing: 0.1em;
+  letter-spacing: 0.12em;
   text-shadow: 0 1px 0 rgba(255,255,255,0.6);
 }
 .nav-logo svg {
@@ -170,12 +170,12 @@ body::before {
   transition: none;
 }
 .solaris-brand span.wave-pop {
-  animation: letterWave 0.38s cubic-bezier(0.45, 0, 0.55, 1) forwards;
+  animation: letterWave 0.42s ease-in-out forwards;
 }
 @keyframes letterWave {
-  0%   { transform: translateY(0); }
-  35%  { transform: translateY(-2.5px); }
-  100% { transform: translateY(0); }
+  0%   { transform: scale(1); }
+  40%  { transform: scale(1.15); }
+  100% { transform: scale(1); }
 }
 .nav-logo svg.logo-pulse {
   animation: logoPulse 0.45s cubic-bezier(0.34,1.56,0.64,1) forwards;
@@ -321,7 +321,7 @@ body::before {
 
 .view-header { margin-bottom: 18px; }
 .view-header h1 {
-  font-family: 'Orbitron', sans-serif;
+  font-family: 'Rajdhani', sans-serif;
   font-size: 1.3rem;
   font-weight: 700;
   color: var(--gold);
@@ -348,7 +348,7 @@ body::before {
 }
 .auth-hex svg { width: 56px; height: 56px; }
 .auth-logo {
-  font-family: 'Orbitron', sans-serif;
+  font-family: 'Rajdhani', sans-serif;
   font-weight: 900;
   font-size: 1.9rem;
   color: var(--gold);
@@ -590,7 +590,7 @@ textarea.input { resize: vertical; min-height: 80px; }
 }
 .product-price-block {}
 .product-price {
-  font-family: 'Orbitron', sans-serif;
+  font-family: 'Rajdhani', sans-serif;
   font-size: 0.92rem;
   font-weight: 700;
   color: var(--gold);
@@ -645,7 +645,7 @@ textarea.input { resize: vertical; min-height: 80px; }
 }
 .cart-item-sub { font-size: 0.75rem; color: var(--text-dim); margin-top: 2px; }
 .cart-item-price {
-  font-family: 'Orbitron', sans-serif;
+  font-family: 'Rajdhani', sans-serif;
   font-size: 0.85rem;
   color: var(--gold);
   white-space: nowrap;
@@ -683,7 +683,7 @@ textarea.input { resize: vertical; min-height: 80px; }
 }
 .summary-row:last-of-type { border: none; margin-bottom: 10px; }
 .summary-row.total { color: var(--text); font-weight: 600; }
-.summary-val { font-family: 'Orbitron', sans-serif; font-size: 0.85rem; color: var(--text); }
+.summary-val { font-family: 'Rajdhani', sans-serif; font-size: 0.85rem; color: var(--text); }
 .summary-row.total .summary-val { color: var(--gold); font-size: 0.95rem; }
 
 .empty-state {
@@ -833,7 +833,7 @@ textarea.input { resize: vertical; min-height: 80px; }
 }
 #modal-content { display: flex; flex-direction: column; gap: 11px; }
 #modal-content h3 {
-  font-family: 'Orbitron', sans-serif;
+  font-family: 'Rajdhani', sans-serif;
   color: var(--gold);
   font-size: 0.95rem;
   margin-bottom: 4px;
