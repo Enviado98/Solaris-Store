@@ -777,10 +777,14 @@ function renderAccountView() {
   const username = currentProfile?.username || '';
   const email    = currentUser?.email || '';
 
-  document.getElementById('acct-email-display').textContent = email;
-
   const uDisp = document.getElementById('acct-username-display');
-  uDisp.textContent = username ? '@' + username : 'Sin username';
+  if (username) {
+    uDisp.textContent = '@' + username;
+    uDisp.classList.remove('acct-username-placeholder');
+  } else {
+    uDisp.textContent = 'usuario';
+    uDisp.classList.add('acct-username-placeholder');
+  }
 
   const avatarEl = document.getElementById('acct-avatar-initials');
   avatarEl.textContent = (username[0] || email[0] || '?').toUpperCase();
@@ -1130,9 +1134,19 @@ function histAmountClass(type, amt) {
   if (type === 'transfer_out') return 'out';
   return amt >= 0 ? 'pos' : 'neg';
 }
+// ─── Query con timeout explícito ───────────────────────────────────
+// Si Supabase no responde en `ms` milisegundos, lanza error en vez de colgarse.
+function withTimeout(promise, ms = 8000) {
+  return Promise.race([
+    promise,
+    new Promise((_, reject) =>
+      setTimeout(() => reject(new Error('timeout')), ms)
+    ),
+  ]);
+}
+
 async function loadAccountHistory() {
   if (!currentUser) {
-    // Si no hay usuario, limpiar los "Cargando..." para no dejarlos colgados
     const comprasEl  = document.getElementById('acct-hist-compras');
     const recargasEl = document.getElementById('acct-hist-recargas');
     if (comprasEl)  comprasEl.innerHTML  = '<div class="acct-hist-empty">Inicia sesión para ver tu historial.</div>';
@@ -1140,33 +1154,44 @@ async function loadAccountHistory() {
     return;
   }
 
+  const uid = currentUser.id;
+
   // ── Compras ──
   const comprasEl = document.getElementById('acct-hist-compras');
   if (comprasEl) {
     comprasEl.innerHTML = '<div class="acct-hist-empty">Cargando...</div>';
-    const { data: orders } = await db
-      .from('orders')
-      .select('*, products(name, price)')
-      .eq('user_id', currentUser.id)
-      .order('created_at', { ascending: false })
-      .limit(20);
+    try {
+      const { data: orders, error } = await withTimeout(
+        db.from('orders')
+          .select('*, products(name, price)')
+          .eq('user_id', uid)
+          .order('created_at', { ascending: false })
+          .limit(20)
+      );
+      if (error) throw error;
 
-    if (!orders || orders.length === 0) {
-      comprasEl.innerHTML = '<div class="acct-hist-empty">Aún no has realizado compras.</div>';
-    } else {
-      comprasEl.innerHTML = orders.slice(0, 20).map(o => {
-        const pname = o.products?.name || 'Producto';
-        const amt   = parseFloat(o.amount_paid || o.products?.price || 0).toFixed(2);
-        const fecha = fmtDate(o.created_at);
-        return `<div class="acct-hist-item">
-          <div class="acct-hist-icon type-compra">${histIcon('compra')}</div>
-          <div class="acct-hist-body">
-            <div class="acct-hist-name">${esc(pname)}</div>
-            <div class="acct-hist-date">${fecha}</div>
-          </div>
-          <div class="acct-hist-amount neg">-$${amt}</div>
-        </div>`;
-      }).join('');
+      if (!orders || orders.length === 0) {
+        comprasEl.innerHTML = '<div class="acct-hist-empty">Aún no has realizado compras.</div>';
+      } else {
+        comprasEl.innerHTML = orders.map(o => {
+          const pname = o.products?.name || 'Producto';
+          const amt   = parseFloat(o.amount_paid || o.products?.price || 0).toFixed(2);
+          const fecha = fmtDate(o.created_at);
+          return `<div class="acct-hist-item">
+            <div class="acct-hist-icon type-compra">${histIcon('compra')}</div>
+            <div class="acct-hist-body">
+              <div class="acct-hist-name">${esc(pname)}</div>
+              <div class="acct-hist-date">${fecha}</div>
+            </div>
+            <div class="acct-hist-amount neg">-$${amt}</div>
+          </div>`;
+        }).join('');
+      }
+    } catch (err) {
+      // Timeout o error de red — mostrar botón de reintentar, nunca dejar "Cargando..."
+      comprasEl.innerHTML = `<div class="acct-hist-empty acct-hist-error">
+        Sin conexión — <button class="acct-retry-btn" onclick="loadAccountHistory()">Reintentar</button>
+      </div>`;
     }
   }
 
@@ -1174,32 +1199,41 @@ async function loadAccountHistory() {
   const recargasEl = document.getElementById('acct-hist-recargas');
   if (recargasEl) {
     recargasEl.innerHTML = '<div class="acct-hist-empty">Cargando...</div>';
-    const { data: movs } = await db
-      .from('wallet_topups')
-      .select('*')
-      .eq('user_id', currentUser.id)
-      .order('created_at', { ascending: false })
-      .limit(20);
+    try {
+      const { data: movs, error } = await withTimeout(
+        db.from('wallet_topups')
+          .select('*')
+          .eq('user_id', uid)
+          .order('created_at', { ascending: false })
+          .limit(20)
+      );
+      if (error) throw error;
 
-    if (!movs || movs.length === 0) {
-      recargasEl.innerHTML = '<div class="acct-hist-empty">Sin movimientos registrados.</div>';
-    } else {
-      recargasEl.innerHTML = movs.slice(0, 20).map(m => {
-        const amt   = parseFloat(m.amount || 0);
-        const sign  = m.type === 'transfer_out' ? '-' : (amt >= 0 ? '+' : '');
-        const fecha = fmtDate(m.created_at);
-        const nota  = m.note || (m.type === 'transfer_in' ? 'Recibido' : m.type === 'transfer_out' ? 'Enviado' : 'Recarga');
-        return `<div class="acct-hist-item">
-          <div class="acct-hist-icon ${histIconClass(m.type)}">${histIcon(m.type)}</div>
-          <div class="acct-hist-body">
-            <div class="acct-hist-name">${esc(nota)}</div>
-            <div class="acct-hist-date">${fecha}</div>
-          </div>
-          <div class="acct-hist-amount ${histAmountClass(m.type, amt)}">${sign}$${Math.abs(amt).toFixed(2)}</div>
-        </div>`;
-      }).join('');
+      if (!movs || movs.length === 0) {
+        recargasEl.innerHTML = '<div class="acct-hist-empty">Sin movimientos registrados.</div>';
+      } else {
+        recargasEl.innerHTML = movs.map(m => {
+          const amt   = parseFloat(m.amount || 0);
+          const sign  = m.type === 'transfer_out' ? '-' : (amt >= 0 ? '+' : '');
+          const fecha = fmtDate(m.created_at);
+          const nota  = m.note || (m.type === 'transfer_in' ? 'Recibido' : m.type === 'transfer_out' ? 'Enviado' : 'Recarga');
+          return `<div class="acct-hist-item">
+            <div class="acct-hist-icon ${histIconClass(m.type)}">${histIcon(m.type)}</div>
+            <div class="acct-hist-body">
+              <div class="acct-hist-name">${esc(nota)}</div>
+              <div class="acct-hist-date">${fecha}</div>
+            </div>
+            <div class="acct-hist-amount ${histAmountClass(m.type, amt)}">${sign}$${Math.abs(amt).toFixed(2)}</div>
+          </div>`;
+        }).join('');
+      }
+    } catch (err) {
+      recargasEl.innerHTML = `<div class="acct-hist-empty acct-hist-error">
+        Sin conexión — <button class="acct-retry-btn" onclick="loadAccountHistory()">Reintentar</button>
+      </div>`;
     }
   }
+
   syncHistScroll();
 }
 
@@ -1207,26 +1241,25 @@ async function loadAccountHistory() {
 document.addEventListener('visibilitychange', async () => {
   if (document.visibilityState !== 'visible') return;
 
-  // Si no hay sesión activa, nada que restaurar
-  if (!currentUser) {
-    // Esperar a que Supabase resuelva la sesión (puede tardar ~1s al reactivar)
-    const { data: { session } } = await db.auth.getSession().catch(() => ({ data: { session: null } }));
-    if (!session) return;
-    // Si hay sesión pero currentUser aún es null, esperar al onAuthStateChange
-    return;
+  // Esperar a que Supabase confirme la sesión (puede tardar tras suspensión)
+  // Reintentar hasta 5 veces con 600ms entre intentos antes de rendirse
+  let uid = currentUser?.id;
+  if (!uid) {
+    for (let i = 0; i < 5; i++) {
+      await new Promise(r => setTimeout(r, 600));
+      const { data: { session } } = await db.auth.getSession().catch(() => ({ data: { session: null } }));
+      if (session?.user) { uid = session.user.id; break; }
+    }
+    if (!uid) return; // Sin sesión tras reintentos, no hacer nada
   }
 
   const saved = sessionStorage.getItem('solaris_view');
-
-  // Restaurar la vista donde el usuario estaba
   if (saved) showView(saved);
 
-  // Si estaba en cuenta, recargar historial fresco con datos actuales
   if (saved === 'account') {
-    // Refrescar profile y wallet por si cambiaron mientras estaba minimizado
     [currentProfile, currentWallet] = await Promise.all([
-      fetchProfile(currentUser.id),
-      fetchWallet(currentUser.id),
+      fetchProfile(uid),
+      fetchWallet(uid),
     ]);
     syncBalanceUI();
     renderAccountView();
@@ -1239,4 +1272,3 @@ function fmtDate(iso) {
   const d = new Date(iso);
   return d.toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' });
 }
-
