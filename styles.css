@@ -1454,9 +1454,22 @@ textarea.input { resize: vertical; min-height: 80px; }
   margin-top: 1px;
 }
 .acct-username-display.acct-username-placeholder {
-  color: rgba(255,255,255,0.28);
-  font-weight: 400;
-  font-style: italic;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 10px 3px 8px;
+  border: 1.5px dashed rgba(255,255,255,0.2);
+  border-radius: 20px;
+  color: rgba(255,255,255,0.35);
+  font-size: 0.74rem;
+  font-weight: 500;
+  font-style: normal;
+  cursor: pointer;
+  transition: border-color 0.18s, color 0.18s;
+}
+.acct-username-display.acct-username-placeholder:hover {
+  border-color: var(--gold);
+  color: var(--gold);
 }
 
 /* ── Ícono del botón Transferir — rota al abrir ── */
