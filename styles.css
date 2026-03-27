@@ -1096,7 +1096,12 @@ textarea.input { resize: vertical; min-height: 80px; }
   letter-spacing: 0.05em;
   box-shadow: 0 3px 10px rgba(194,122,0,0.30);
 }
-.acct-profile-info { flex: 1; min-width: 0; }
+.acct-profile-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+}
 .acct-email {
   font-size: 0.78rem;
   color: var(--text-dim);
