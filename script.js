@@ -1077,6 +1077,15 @@ async function doSaveProfile() {
 }
 
 
+
+// ─── Activa scroll en historial solo si el contenido desborda ──
+function syncHistScroll() {
+  document.querySelectorAll('.acct-hist-panel').forEach(panel => {
+    const overflows = panel.scrollHeight > panel.clientHeight + 2;
+    panel.style.overflowY = overflows ? 'auto' : 'hidden';
+    panel.style.touchAction = overflows ? 'pan-y' : 'auto';
+  });
+}
 // ─── Historia: SVG icons por tipo ──────────────────
 function histIcon(type) {
   const icons = {
@@ -1175,6 +1184,7 @@ async function loadAccountHistory() {
       }).join('');
     }
   }
+  setTimeout(syncHistScroll, 60);
 }
 
 function fmtDate(iso) {
