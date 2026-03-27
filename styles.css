@@ -1075,35 +1075,28 @@ textarea.input { resize: vertical; min-height: 80px; }
   margin-bottom: 14px;
 }
 
-/* Profile row */
-.acct-profile-row {
+/* ── Profile card ── */
+.acct-profile-card {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 13px;
 }
 .acct-avatar {
-  width: 46px; height: 46px;
+  width: 50px; height: 50px;
   border-radius: 50%;
   background: linear-gradient(135deg, #c27a00, #f59e0b);
   color: #fff;
   font-family: 'Rajdhani', sans-serif;
   font-weight: 700;
-  font-size: 1.2rem;
+  font-size: 1.3rem;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
   letter-spacing: 0.05em;
+  box-shadow: 0 3px 10px rgba(194,122,0,0.30);
 }
 .acct-profile-info { flex: 1; min-width: 0; }
-.acct-name {
-  font-weight: 700;
-  font-size: 1rem;
-  color: var(--text);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
 .acct-email {
   font-size: 0.78rem;
   color: var(--text-dim);
@@ -1112,20 +1105,115 @@ textarea.input { resize: vertical; min-height: 80px; }
   text-overflow: ellipsis;
   margin-top: 2px;
 }
+
+/* Edit button */
 .acct-edit-btn {
-  background: none;
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  padding: 7px;
-  color: var(--text-dim);
-  cursor: pointer;
   display: flex;
   align-items: center;
-  transition: border-color 0.2s, color 0.2s;
+  gap: 5px;
+  padding: 7px 12px;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  color: var(--text-dim);
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
   flex-shrink: 0;
+  transition: background 0.18s, border-color 0.18s, color 0.18s, transform 0.15s;
 }
-.acct-edit-btn:hover { border-color: var(--gold); color: var(--gold); }
-.acct-edit-form { margin-top: 14px; }
+.acct-edit-btn:hover  { border-color: var(--gold); color: var(--gold); background: var(--gold-glow); }
+.acct-edit-btn:active { transform: scale(0.96); }
+.acct-edit-btn.active { border-color: var(--gold); color: var(--gold); background: var(--gold-glow); }
+.acct-edit-label { letter-spacing: 0.02em; }
+
+/* ── Edit form — animated expand ── */
+.acct-edit-form {
+  overflow: hidden;
+  max-height: 0;
+  opacity: 0;
+  transform: translateY(-4px);
+  pointer-events: none;
+  transition:
+    max-height 0.36s cubic-bezier(0.4, 0, 0.2, 1),
+    opacity    0.24s ease,
+    transform  0.24s ease;
+}
+.acct-edit-form.open {
+  max-height: 260px;
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+.acct-edit-inner {
+  padding-top: 18px;
+  border-top: 1px solid var(--border);
+  margin-top: 16px;
+}
+.acct-edit-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.acct-edit-title {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: 0.01em;
+}
+.acct-cooldown-note {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.7rem;
+  color: var(--text-dim);
+  background: var(--bg3);
+  border-radius: 20px;
+  padding: 3px 9px;
+}
+.acct-edit-input-wrap { margin-bottom: 0; }
+
+/* Save / cancel buttons */
+.acct-edit-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+}
+.acct-save-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 11px;
+  background: var(--gold);
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  font-size: 0.88rem;
+  font-weight: 700;
+  cursor: pointer;
+  letter-spacing: 0.03em;
+  transition: opacity 0.15s, transform 0.15s;
+}
+.acct-save-btn:hover  { opacity: 0.88; }
+.acct-save-btn:active { transform: scale(0.97); }
+.acct-save-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+.acct-cancel-btn {
+  padding: 11px 18px;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-dim);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+.acct-cancel-btn:hover { background: var(--border); color: var(--text); }
 
 /* Historial tabs */
 .acct-hist-tabs {
