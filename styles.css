@@ -95,14 +95,14 @@ body::before {
   position: fixed;
   top: 0; left: 0; right: 0;
   height: var(--nav-h);
-  background: linear-gradient(
-    105deg,
-    #fffbf0 0%,
-    #fff8e1 25%,
-    #fef3c7 55%,
-    #fde68a 80%,
-    #fbbf24 100%
-  );
+  background:
+    radial-gradient(ellipse 180% 120% at 20% 60%, #fbbf24 0%, transparent 60%),
+    radial-gradient(ellipse 140% 100% at 80% 40%, #fde68a 0%, transparent 55%),
+    radial-gradient(ellipse 200% 140% at 50% 80%, #fff8e1 0%, transparent 70%),
+    #fffbf0;
+  background-size: 280% 280%, 220% 220%, 300% 300%, 100% 100%;
+  background-position: 0% 50%, 100% 20%, 50% 80%, 0 0;
+  animation: sandDrift 18s ease-in-out infinite alternate;
   border-bottom: 1px solid rgba(194,122,0,0.18);
   display: flex;
   align-items: center;
@@ -110,6 +110,14 @@ body::before {
   padding: 0 16px;
   z-index: 100;
   overflow: hidden;
+}
+
+@keyframes sandDrift {
+  0%   { background-position: 0%   50%,  100% 20%,  50%  80%, 0 0; }
+  25%  { background-position: 60%  30%,  30%  70%,  80%  20%, 0 0; }
+  50%  { background-position: 100% 60%,  70%  10%,  20%  60%, 0 0; }
+  75%  { background-position: 40%  80%,  10%  50%,  70%  40%, 0 0; }
+  100% { background-position: 80%  20%,  60%  80%,  30%  90%, 0 0; }
 }
 
 /* Barrido de luz cada 3s */
@@ -133,7 +141,7 @@ body::before {
     transparent     100%
   );
   transform: skewX(-12deg);
-  animation: navShimmer 6s ease-in-out infinite;
+  animation: navShimmer 8s ease-in-out infinite;
   pointer-events: none;
 }
 
