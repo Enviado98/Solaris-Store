@@ -831,10 +831,29 @@ function initAccountListeners() {
   });
 
   document.getElementById('tr-username')?.addEventListener('input', () => {
-    const fb  = document.getElementById('tr-user-feedback');
-    const val = document.getElementById('tr-username').value.trim().toLowerCase();
+    const fb    = document.getElementById('tr-user-feedback');
+    const input = document.getElementById('tr-username');
+
+    // Strip @ silenciosamente si el usuario lo escribe
+    if (input.value.startsWith('@')) {
+      const cursor = input.selectionStart;
+      input.value = input.value.replace(/^@+/, '');
+      input.setSelectionRange(Math.max(0, cursor - 1), Math.max(0, cursor - 1));
+    }
+
+    const val = input.value.trim().toLowerCase();
     clearTimeout(_usernameCheckTimer);
+
+    // Campo vacío → limpiar feedback
     if (!val) { fb.textContent = ''; fb.className = 'acct-user-feedback'; return; }
+
+    // Validación local ANTES de tocar la red
+    if (!/^[a-z0-9._]{1,20}$/.test(val)) {
+      fb.textContent = 'Solo letras, números, puntos y _';
+      fb.className = 'acct-user-feedback error';
+      return;
+    }
+
     fb.textContent = 'Buscando...';
     fb.className = 'acct-user-feedback checking';
     _usernameCheckTimer = setTimeout(() => checkTransferUser(val, fb), 500);
@@ -881,33 +900,65 @@ function initAccountListeners() {
 }
 
 async function checkTransferUser(username, fb) {
-  const res = await db.rpc('check_username', { p_username: username });
-  if (!res.data) { fb.textContent = 'Error buscando usuario'; fb.className = 'acct-user-feedback error'; return; }
+  try {
+    const timeout = new Promise((_, reject) =>
+      setTimeout(() => reject(new Error('timeout')), 6000)
+    );
+    const res = await Promise.race([
+      db.rpc('check_username', { p_username: username }),
+      timeout,
+    ]);
 
-  if (res.data.reason === 'formato_invalido') {
-    fb.textContent = 'Usuario inválido';
-    fb.className = 'acct-user-feedback error';
-  } else if (res.data.available === false) {
-    // available=false significa que ESE username YA EXISTE → destinatario encontrado
-    fb.textContent = '✓ Usuario encontrado';
-    fb.className = 'acct-user-feedback ok';
-  } else {
-    fb.textContent = 'Usuario no encontrado';
+    if (!res.data) {
+      fb.textContent = 'Error buscando usuario';
+      fb.className = 'acct-user-feedback error';
+      return;
+    }
+
+    if (res.data.reason === 'formato_invalido') {
+      fb.textContent = 'Usuario inválido';
+      fb.className = 'acct-user-feedback error';
+    } else if (res.data.available === false) {
+      fb.textContent = '✓ Usuario encontrado';
+      fb.className = 'acct-user-feedback ok';
+    } else {
+      fb.textContent = 'Usuario no encontrado';
+      fb.className = 'acct-user-feedback error';
+    }
+  } catch (err) {
+    fb.textContent = err.message === 'timeout' ? 'Sin respuesta — verifica tu conexión' : 'Error buscando usuario';
     fb.className = 'acct-user-feedback error';
   }
 }
 
 async function checkUsernameAvailable(username, fb) {
-  const res = await db.rpc('check_username', { p_username: username });
-  if (!res.data) { fb.textContent = 'Error verificando'; fb.className = 'acct-user-feedback error'; return; }
-  if (res.data.reason === 'formato_invalido') {
-    fb.textContent = 'Formato inválido';
-    fb.className = 'acct-user-feedback error';
-  } else if (res.data.available) {
-    fb.textContent = '✓ Disponible';
-    fb.className = 'acct-user-feedback ok';
-  } else {
-    fb.textContent = 'Ya está en uso';
+  try {
+    const timeout = new Promise((_, reject) =>
+      setTimeout(() => reject(new Error('timeout')), 6000)
+    );
+    const res = await Promise.race([
+      db.rpc('check_username', { p_username: username }),
+      timeout,
+    ]);
+
+    if (!res.data) {
+      fb.textContent = 'Error verificando';
+      fb.className = 'acct-user-feedback error';
+      return;
+    }
+
+    if (res.data.reason === 'formato_invalido') {
+      fb.textContent = 'Formato inválido';
+      fb.className = 'acct-user-feedback error';
+    } else if (res.data.available) {
+      fb.textContent = '✓ Disponible';
+      fb.className = 'acct-user-feedback ok';
+    } else {
+      fb.textContent = 'Ya está en uso';
+      fb.className = 'acct-user-feedback error';
+    }
+  } catch (err) {
+    fb.textContent = err.message === 'timeout' ? 'Sin respuesta — verifica tu conexión' : 'Error verificando';
     fb.className = 'acct-user-feedback error';
   }
 }
