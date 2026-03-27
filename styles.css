@@ -1247,27 +1247,18 @@ textarea.input { resize: vertical; min-height: 80px; }
   box-shadow: 0 1px 4px rgba(0,0,0,0.08);
 }
 
-/* History panel scroll container */
 .acct-hist-panel {
   min-height: 60px;
-  max-height: 300px;
-  /* Empieza bloqueado — JS lo abre solo si el contenido desborda */
-  overflow-y: hidden;
-  overscroll-behavior-y: none;
-  scrollbar-width: thin;
-  scrollbar-color: var(--border) transparent;
-}
-/* JS añade esta clase cuando scrollHeight > clientHeight */
-.acct-hist-panel.scrollable {
-  overflow-y: auto;
-}
-.acct-hist-panel::-webkit-scrollbar { width: 4px; }
-.acct-hist-panel::-webkit-scrollbar-track { background: transparent; }
-.acct-hist-panel::-webkit-scrollbar-thumb {
-  background: var(--border);
-  border-radius: 4px;
 }
 .acct-hist-panel.hidden { display: none; }
+
+@keyframes histFadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.acct-hist-panel.anim-in {
+  animation: histFadeIn 0.22s ease both;
+}
 
 .acct-hist-item {
   display: flex;
@@ -1475,3 +1466,4 @@ textarea.input { resize: vertical; min-height: 80px; }
 #acct-transfer-trigger.active svg {
   transform: rotate(25deg) scale(1.1);
 }
+
