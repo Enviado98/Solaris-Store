@@ -734,84 +734,245 @@ function friendlyError(msg) {
 // ══════════════════════════════════════════════════
 //  VISTA CUENTA
 // ══════════════════════════════════════════════════
+
+let _usernameCheckTimer = null;
+
 function renderAccountView() {
   // Balance
   const bal = parseFloat(currentWallet?.balance || 0).toFixed(2);
-  const balEl = document.getElementById('acct-balance-val');
-  if (balEl) balEl.textContent = '$' + bal;
+  document.getElementById('acct-balance-val').textContent = '$' + bal;
 
   // Perfil
-  const name = currentProfile?.full_name || '';
-  const email = currentUser?.email || '';
-  const nameEl = document.getElementById('acct-name-display');
-  const emailEl = document.getElementById('acct-email-display');
+  const name     = currentProfile?.full_name || '';
+  const username = currentProfile?.username  || '';
+  const email    = currentUser?.email || '';
+
+  document.getElementById('acct-name-display').textContent     = name || 'Sin nombre';
+  document.getElementById('acct-email-display').textContent    = email;
+
+  const uDisp = document.getElementById('acct-username-display');
+  uDisp.textContent = username ? '@' + username : 'Sin username';
+
   const avatarEl = document.getElementById('acct-avatar-initials');
-  if (nameEl) nameEl.textContent = name || 'Sin nombre';
-  if (emailEl) emailEl.textContent = email;
-  if (avatarEl) {
-    const initials = name
-      ? name.trim().split(' ').slice(0, 2).map(w => w[0]).join('').toUpperCase()
-      : (email[0] || '?').toUpperCase();
-    avatarEl.textContent = initials;
-  }
+  const initials = name
+    ? name.trim().split(' ').slice(0,2).map(w=>w[0]).join('').toUpperCase()
+    : (email[0]||'?').toUpperCase();
+  avatarEl.textContent = initials;
 
-  // Edit name toggle
-  const editBtn = document.getElementById('acct-edit-btn');
-  const editForm = document.getElementById('acct-edit-form');
-  const nameInput = document.getElementById('acct-name-input');
-  const saveBtn = document.getElementById('acct-save-name');
-  const cancelBtn = document.getElementById('acct-cancel-name');
+  // ── Transferir toggle ──
+  _bindOnce('acct-transfer-trigger', 'click', () => {
+    document.getElementById('acct-transfer-panel').classList.toggle('hidden');
+    document.getElementById('acct-edit-form').classList.add('hidden');
+  });
+  _bindOnce('tr-cancel-btn', 'click', () => {
+    document.getElementById('acct-transfer-panel').classList.add('hidden');
+    document.getElementById('tr-username').value = '';
+    document.getElementById('tr-amount').value   = '';
+    document.getElementById('tr-user-feedback').textContent = '';
+    document.getElementById('tr-user-feedback').className = 'acct-user-feedback';
+  });
 
-  // Remove previous listeners by cloning nodes
-  if (editBtn) {
-    const newEditBtn = editBtn.cloneNode(true);
-    editBtn.parentNode.replaceChild(newEditBtn, editBtn);
-    newEditBtn.addEventListener('click', () => {
-      document.getElementById('acct-edit-form').classList.toggle('hidden');
-      document.getElementById('acct-name-input').value = currentProfile?.full_name || '';
-      document.getElementById('acct-name-input').focus();
-    });
-  }
-  if (saveBtn) {
-    const newSave = saveBtn.cloneNode(true);
-    saveBtn.parentNode.replaceChild(newSave, saveBtn);
-    newSave.addEventListener('click', async () => {
-      const newName = document.getElementById('acct-name-input').value.trim();
-      if (!newName) { toast('Escribe un nombre', 'error'); return; }
-      newSave.disabled = true; newSave.textContent = 'Guardando...';
-      const { error } = await db.from('profiles')
-        .update({ full_name: newName })
-        .eq('id', currentUser.id);
-      newSave.disabled = false; newSave.textContent = 'Guardar';
-      if (error) { toast('Error al guardar', 'error'); return; }
-      currentProfile.full_name = newName;
-      toast('Nombre actualizado ✓');
-      renderAccountView();
-    });
-  }
-  if (cancelBtn) {
-    const newCancel = cancelBtn.cloneNode(true);
-    cancelBtn.parentNode.replaceChild(newCancel, cancelBtn);
-    newCancel.addEventListener('click', () => {
-      document.getElementById('acct-edit-form').classList.add('hidden');
-    });
-  }
+  // Username check en tiempo real (transfer)
+  _bindOnce('tr-username', 'input', () => {
+    const fb = document.getElementById('tr-user-feedback');
+    const val = document.getElementById('tr-username').value.trim().toLowerCase();
+    clearTimeout(_usernameCheckTimer);
+    if (!val) { fb.textContent = ''; fb.className = 'acct-user-feedback'; return; }
+    fb.textContent = 'Buscando...';
+    fb.className = 'acct-user-feedback checking';
+    _usernameCheckTimer = setTimeout(() => checkTransferUser(val, fb), 500);
+  });
 
-  // Historial tabs
+  // Enviar transferencia
+  _bindOnce('tr-send-btn', 'click', doTransfer);
+
+  // ── Edit perfil toggle ──
+  _bindOnce('acct-edit-btn', 'click', () => {
+    const form = document.getElementById('acct-edit-form');
+    form.classList.toggle('hidden');
+    if (!form.classList.contains('hidden')) {
+      document.getElementById('acct-name-input').value     = currentProfile?.full_name || '';
+      document.getElementById('acct-username-input').value = currentProfile?.username  || '';
+      document.getElementById('acct-username-feedback').textContent = '';
+      document.getElementById('acct-transfer-panel').classList.add('hidden');
+    }
+  });
+  _bindOnce('acct-cancel-name', 'click', () => {
+    document.getElementById('acct-edit-form').classList.add('hidden');
+  });
+
+  // Username check en tiempo real (editar perfil)
+  _bindOnce('acct-username-input', 'input', () => {
+    const fb  = document.getElementById('acct-username-feedback');
+    const val = document.getElementById('acct-username-input').value.trim().toLowerCase();
+    clearTimeout(_usernameCheckTimer);
+    if (!val) { fb.textContent = ''; fb.className = 'acct-user-feedback'; return; }
+    if (val === currentProfile?.username) {
+      fb.textContent = 'Ese es tu username actual';
+      fb.className = 'acct-user-feedback ok';
+      return;
+    }
+    if (!/^[a-z0-9._]{3,20}$/.test(val)) {
+      fb.textContent = 'Solo letras, números, puntos y _ (3-20 caracteres)';
+      fb.className = 'acct-user-feedback error';
+      return;
+    }
+    fb.textContent = 'Verificando disponibilidad...';
+    fb.className = 'acct-user-feedback checking';
+    _usernameCheckTimer = setTimeout(() => checkUsernameAvailable(val, fb), 500);
+  });
+
+  _bindOnce('acct-save-name', 'click', doSaveProfile);
+
+  // ── Historial tabs ──
   document.querySelectorAll('.acct-hist-tab').forEach(tab => {
-    const newTab = tab.cloneNode(true);
-    tab.parentNode.replaceChild(newTab, tab);
-    newTab.addEventListener('click', () => {
-      document.querySelectorAll('.acct-hist-tab').forEach(t => t.classList.remove('active'));
-      newTab.classList.add('active');
-      const which = newTab.dataset.hist;
+    const t = _rebind(tab);
+    t.addEventListener('click', () => {
+      document.querySelectorAll('.acct-hist-tab').forEach(x => x.classList.remove('active'));
+      t.classList.add('active');
       document.querySelectorAll('.acct-hist-panel').forEach(p => p.classList.add('hidden'));
-      document.getElementById(`acct-hist-${which}`)?.classList.remove('hidden');
+      document.getElementById('acct-hist-' + t.dataset.hist)?.classList.remove('hidden');
     });
   });
 
-  // Load history
   loadAccountHistory();
+}
+
+// Reemplazar un elemento por clon para limpiar listeners
+function _rebind(el) {
+  const clone = el.cloneNode(true);
+  el.parentNode.replaceChild(clone, el);
+  return clone;
+}
+function _bindOnce(id, event, fn) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  const fresh = _rebind(el);
+  fresh.addEventListener(event, fn);
+}
+
+async function checkTransferUser(username, fb) {
+  const { data } = await db.from('check_username').rpc
+    ? db.rpc('check_username', { p_username: username })
+    : { data: null };
+
+  // Usar RPC correctamente
+  const res = await db.rpc('check_username', { p_username: username });
+  if (res.data?.available === false && res.data?.reason !== 'formato_invalido') {
+    // Usuario existe (username tomado = destinatario encontrado para transferencia)
+    fb.textContent = '✓ Usuario encontrado';
+    fb.className = 'acct-user-feedback ok';
+  } else if (res.data?.reason === 'formato_invalido') {
+    fb.textContent = 'Usuario inválido';
+    fb.className = 'acct-user-feedback error';
+  } else {
+    fb.textContent = 'Usuario no encontrado';
+    fb.className = 'acct-user-feedback error';
+  }
+}
+
+async function checkUsernameAvailable(username, fb) {
+  const res = await db.rpc('check_username', { p_username: username });
+  if (!res.data) { fb.textContent = 'Error verificando'; fb.className = 'acct-user-feedback error'; return; }
+  if (res.data.reason === 'formato_invalido') {
+    fb.textContent = 'Formato inválido';
+    fb.className = 'acct-user-feedback error';
+  } else if (res.data.available) {
+    fb.textContent = '✓ Disponible';
+    fb.className = 'acct-user-feedback ok';
+  } else {
+    fb.textContent = 'Ya está en uso';
+    fb.className = 'acct-user-feedback error';
+  }
+}
+
+async function doTransfer() {
+  const btn      = document.getElementById('tr-send-btn');
+  const username = document.getElementById('tr-username').value.trim().toLowerCase();
+  const amount   = parseFloat(document.getElementById('tr-amount').value);
+  const fb       = document.getElementById('tr-user-feedback');
+
+  if (!username) { toast('Escribe el usuario destino', 'error'); return; }
+  if (!amount || amount <= 0) { toast('Escribe un monto válido', 'error'); return; }
+  if (amount > parseFloat(currentWallet?.balance || 0)) {
+    toast('Saldo insuficiente', 'error'); return;
+  }
+
+  btn.disabled = true; btn.textContent = 'Enviando...';
+  const { data, error } = await db.rpc('transfer_balance', {
+    p_to_username: username,
+    p_amount:      amount
+  });
+  btn.disabled = false; btn.textContent = 'Enviar';
+
+  if (error || !data?.ok) {
+    const msg = data?.error || error?.message || 'Error en la transferencia';
+    toast(msg, 'error');
+    fb.textContent = msg;
+    fb.className = 'acct-user-feedback error';
+    return;
+  }
+
+  // Actualizar balance local
+  currentWallet.balance = data.balance;
+  syncBalanceUI();
+  toast(`✓ Enviaste $${amount.toFixed(2)} a @${username}`);
+
+  // Limpiar panel
+  document.getElementById('acct-transfer-panel').classList.add('hidden');
+  document.getElementById('tr-username').value = '';
+  document.getElementById('tr-amount').value   = '';
+  fb.textContent = ''; fb.className = 'acct-user-feedback';
+
+  renderAccountView();
+}
+
+async function doSaveProfile() {
+  const btn      = document.getElementById('acct-save-name');
+  const newName  = document.getElementById('acct-name-input').value.trim();
+  const newUser  = document.getElementById('acct-username-input').value.trim().toLowerCase();
+  const fb       = document.getElementById('acct-username-feedback');
+
+  if (!newName) { toast('Escribe tu nombre', 'error'); return; }
+
+  // Validar username si cambió
+  if (newUser && newUser !== currentProfile?.username) {
+    if (!/^[a-z0-9._]{3,20}$/.test(newUser)) {
+      toast('Username inválido', 'error'); return;
+    }
+    // Verificar disponibilidad una vez más antes de guardar
+    const check = await db.rpc('check_username', { p_username: newUser });
+    if (!check.data?.available) {
+      fb.textContent = 'Ya está en uso, elige otro';
+      fb.className = 'acct-user-feedback error';
+      return;
+    }
+  }
+
+  btn.disabled = true; btn.textContent = 'Guardando...';
+  const updates = { full_name: newName };
+  if (newUser) updates.username = newUser;
+
+  const { error } = await db.from('profiles')
+    .update(updates)
+    .eq('id', currentUser.id);
+
+  btn.disabled = false; btn.textContent = 'Guardar';
+
+  if (error) {
+    const msg = error.message?.includes('idx_profiles_username')
+      ? 'Ese username ya está en uso'
+      : 'Error al guardar';
+    toast(msg, 'error');
+    fb.textContent = msg; fb.className = 'acct-user-feedback error';
+    return;
+  }
+
+  currentProfile.full_name = newName;
+  if (newUser) currentProfile.username = newUser;
+  toast('Perfil actualizado ✓');
+  document.getElementById('acct-edit-form').classList.add('hidden');
+  renderAccountView();
 }
 
 async function loadAccountHistory() {
@@ -847,32 +1008,35 @@ async function loadAccountHistory() {
     }
   }
 
-  // ── Recargas ──
+  // ── Movimientos (recargas + transferencias) ──
   const recargasEl = document.getElementById('acct-hist-recargas');
   if (recargasEl) {
     recargasEl.innerHTML = '<div class="acct-hist-empty">Cargando...</div>';
-    const { data: recargas } = await db
+    const { data: movs } = await db
       .from('wallet_topups')
       .select('*')
       .eq('user_id', currentUser.id)
       .order('created_at', { ascending: false })
-      .limit(30);
+      .limit(40);
 
-    // Si la tabla no existe o está vacía, mostramos mensaje genérico
-    if (!recargas || recargas.length === 0) {
-      recargasEl.innerHTML = '<div class="acct-hist-empty">No hay recargas registradas.</div>';
+    if (!movs || movs.length === 0) {
+      recargasEl.innerHTML = '<div class="acct-hist-empty">Sin movimientos registrados.</div>';
     } else {
-      recargasEl.innerHTML = recargas.map(r => {
-        const amt   = parseFloat(r.amount || 0).toFixed(2);
-        const fecha = fmtDate(r.created_at);
-        const nota  = r.note || 'Recarga de saldo';
+      const iconMap = { topup: '💰', transfer_in: '📥', transfer_out: '📤' };
+      recargasEl.innerHTML = movs.map(m => {
+        const amt    = parseFloat(m.amount || 0);
+        const sign   = amt >= 0 ? '+' : '';
+        const cls    = amt >= 0 ? 'recarga' : 'compra';
+        const icon   = iconMap[m.type] || '💰';
+        const fecha  = fmtDate(m.created_at);
+        const nota   = m.note || 'Movimiento';
         return `<div class="acct-hist-item">
-          <div class="acct-hist-icon recarga">💰</div>
+          <div class="acct-hist-icon ${cls}">${icon}</div>
           <div class="acct-hist-body">
             <div class="acct-hist-name">${esc(nota)}</div>
             <div class="acct-hist-date">${fecha}</div>
           </div>
-          <div class="acct-hist-amount recarga">+$${amt}</div>
+          <div class="acct-hist-amount ${cls}">${sign}$${Math.abs(amt).toFixed(2)}</div>
         </div>`;
       }).join('');
     }
