@@ -918,19 +918,22 @@ async function doTransfer() {
 }
 
 async function doSaveProfile() {
-  const btn      = document.getElementById('acct-save-name');
-  const newUser  = document.getElementById('acct-username-input').value.trim().toLowerCase();
-  const fb       = document.getElementById('acct-username-feedback');
+  const btn     = document.getElementById('acct-save-name');
+  const newUser = document.getElementById('acct-username-input').value.trim().toLowerCase();
+  const fb      = document.getElementById('acct-username-feedback');
 
   if (!newUser) { toast('Escribe un username', 'error'); return; }
 
-  // Validar username si cambió
-  if (newUser !== currentProfile?.username) {
-    if (!/^[a-z0-9._]{3,20}$/.test(newUser)) {
-      toast('Username inválido', 'error'); return;
-    }
-    // Verificar disponibilidad una vez más antes de guardar
+  // Validar formato siempre
+  if (!/^[a-z0-9._]{3,20}$/.test(newUser)) {
+    toast('Solo letras, números, puntos y _ (3-20 caracteres)', 'error'); return;
+  }
+
+  // Solo verificar disponibilidad si el username cambió
+  const currentUsername = (currentProfile?.username || '').toLowerCase();
+  if (newUser !== currentUsername) {
     const check = await db.rpc('check_username', { p_username: newUser });
+    if (check.error) { toast('Error al verificar username', 'error'); return; }
     if (!check.data?.available) {
       fb.textContent = 'Ya está en uso, elige otro';
       fb.className = 'acct-user-feedback error';
@@ -948,7 +951,7 @@ async function doSaveProfile() {
   if (error) {
     const msg = error.message?.includes('idx_profiles_username')
       ? 'Ese username ya está en uso'
-      : 'Error al guardar';
+      : (error.message || 'Error al guardar');
     toast(msg, 'error');
     fb.textContent = msg; fb.className = 'acct-user-feedback error';
     return;
