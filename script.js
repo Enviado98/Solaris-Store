@@ -814,7 +814,8 @@ function initAccountListeners() {
   document.getElementById('acct-transfer-trigger')?.addEventListener('click', () => {
     if (!currentProfile?.username) {
       toast('Configura tu @usuario antes de transferir', 'error');
-      document.getElementById('acct-edit-form').classList.remove('hidden');
+      document.getElementById('acct-edit-form').classList.add('open');
+      document.getElementById('acct-edit-btn')?.classList.add('active');
       document.getElementById('acct-username-input')?.focus();
       return;
     }
@@ -822,7 +823,8 @@ function initAccountListeners() {
     const trigger = document.getElementById('acct-transfer-trigger');
     const isOpen = panel.classList.toggle('open');
     trigger.classList.toggle('active', isOpen);
-    document.getElementById('acct-edit-form').classList.add('hidden');
+    document.getElementById('acct-edit-form').classList.remove('open');
+    document.getElementById('acct-edit-btn')?.classList.remove('active');
   });
 
   document.getElementById('tr-cancel-btn')?.addEventListener('click', () => {
@@ -867,18 +869,21 @@ function initAccountListeners() {
 
   // ── Edit perfil toggle ──
   document.getElementById('acct-edit-btn')?.addEventListener('click', () => {
-    const form = document.getElementById('acct-edit-form');
-    form.classList.toggle('hidden');
-    if (!form.classList.contains('hidden')) {
+    const form    = document.getElementById('acct-edit-form');
+    const editBtn = document.getElementById('acct-edit-btn');
+    const isOpen  = form.classList.toggle('open');
+    editBtn.classList.toggle('active', isOpen);
+    if (isOpen) {
       document.getElementById('acct-username-input').value = currentProfile?.username || '';
       document.getElementById('acct-username-feedback').textContent = '';
       document.getElementById('acct-transfer-panel').classList.remove('open');
-    document.getElementById('acct-transfer-trigger')?.classList.remove('active');
+      document.getElementById('acct-transfer-trigger')?.classList.remove('active');
     }
   });
 
   document.getElementById('acct-cancel-name')?.addEventListener('click', () => {
-    document.getElementById('acct-edit-form').classList.add('hidden');
+    document.getElementById('acct-edit-form').classList.remove('open');
+    document.getElementById('acct-edit-btn')?.classList.remove('active');
   });
 
   document.getElementById('acct-username-input')?.addEventListener('input', () => {
@@ -1066,7 +1071,8 @@ async function doSaveProfile() {
   currentProfile.username = newUser;
   if (updatePayload.username_changed_at) currentProfile.username_changed_at = updatePayload.username_changed_at;
   toast('Username actualizado ✓');
-  document.getElementById('acct-edit-form').classList.add('hidden');
+  document.getElementById('acct-edit-form').classList.remove('open');
+    document.getElementById('acct-edit-btn')?.classList.remove('active');
   renderAccountView();
 }
 
