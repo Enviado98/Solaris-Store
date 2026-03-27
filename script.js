@@ -64,6 +64,10 @@ let allProducts    = [];
 let currentCat     = 'all';
 let cart           = JSON.parse(localStorage.getItem('solaris_cart') || '[]');
 
+// ─── Caché del historial ────────────────────────
+// Se carga una vez y se reutiliza. Se invalida solo al hacer una compra.
+const _histCache = { orders: null, movs: null };
+
 // ══════════════════════════════════════════════════
 //  INIT
 // ══════════════════════════════════════════════════
@@ -499,6 +503,7 @@ async function doCheckout() {
     // 3. Actualizar estado local
     currentWallet.balance = newBalance;
     cart = []; saveCart(); syncBalanceUI(); syncCartCount();
+    invalidateHistoryCache(); // la compra aparecerá en el historial en la próxima visita
 
     // 4. Mostrar credenciales (si las tiene)
     const accountsHTML = accounts.length
@@ -1013,6 +1018,7 @@ async function doTransfer() {
   // Actualizar balance local
   currentWallet.balance = data.balance;
   syncBalanceUI();
+  invalidateHistoryCache(); // la transferencia aparecerá en movimientos
   toast(`✓ Enviaste $${amount.toFixed(2)} a @${username}`);
 
   // Limpiar panel
@@ -1134,118 +1140,116 @@ function histAmountClass(type, amt) {
   if (type === 'transfer_out') return 'out';
   return amt >= 0 ? 'pos' : 'neg';
 }
-// ─── Query con timeout explícito ───────────────────────────────────
-// Si Supabase no responde en `ms` milisegundos, lanza error en vez de colgarse.
-function withTimeout(promise, ms = 8000) {
-  return Promise.race([
-    promise,
-    new Promise((_, reject) =>
-      setTimeout(() => reject(new Error('timeout')), ms)
-    ),
-  ]);
-}
+// ══════════════════════════════════════════════════
+//  HISTORIAL — caché en memoria
+//  La primera vez carga desde Supabase y guarda en _histCache.
+//  Al volver a la vista (minimizar/restaurar) renderiza desde caché
+//  instantáneamente — sin red, sin "Cargando..." perpetuo.
+//  Solo se invalida cuando el usuario hace una compra (doCheckout).
+// ══════════════════════════════════════════════════
 
-async function loadAccountHistory() {
-  if (!currentUser) {
-    const comprasEl  = document.getElementById('acct-hist-compras');
-    const recargasEl = document.getElementById('acct-hist-recargas');
-    if (comprasEl)  comprasEl.innerHTML  = '<div class="acct-hist-empty">Inicia sesión para ver tu historial.</div>';
-    if (recargasEl) recargasEl.innerHTML = '<div class="acct-hist-empty">Inicia sesión para ver tu historial.</div>';
-    return;
-  }
-
-  const uid        = currentUser.id;
+function _renderHistory() {
   const comprasEl  = document.getElementById('acct-hist-compras');
   const recargasEl = document.getElementById('acct-hist-recargas');
 
-  // Mostrar "Cargando..." en ambos a la vez
-  if (comprasEl)  comprasEl.innerHTML  = '<div class="acct-hist-empty">Cargando...</div>';
-  if (recargasEl) recargasEl.innerHTML = '<div class="acct-hist-empty">Cargando...</div>';
-
-  // Lanzar ambas queries EN PARALELO — ninguna bloquea a la otra
-  const [ordersResult, movsResult] = await Promise.allSettled([
-    withTimeout(
-      db.from('orders')
-        .select('*, products(name, price)')
-        .eq('user_id', uid)
-        .order('created_at', { ascending: false })
-        .limit(20)
-    ),
-    withTimeout(
-      db.from('wallet_topups')
-        .select('*')
-        .eq('user_id', uid)
-        .order('created_at', { ascending: false })
-        .limit(20)
-    ),
-  ]);
-
-  // ── Renderizar Compras ──
   if (comprasEl) {
-    if (ordersResult.status === 'rejected' || ordersResult.value?.error) {
-      comprasEl.innerHTML = `<div class="acct-hist-empty acct-hist-error">
-        Sin conexión — <button class="acct-retry-btn" onclick="retryHistory()">Reintentar</button>
-      </div>`;
+    const orders = _histCache.orders;
+    if (orders === null) {
+      comprasEl.innerHTML = '<div class="acct-hist-empty">Cargando...</div>';
+    } else if (orders.length === 0) {
+      comprasEl.innerHTML = '<div class="acct-hist-empty">Aún no has realizado compras.</div>';
     } else {
-      const orders = ordersResult.value?.data;
-      if (!orders || orders.length === 0) {
-        comprasEl.innerHTML = '<div class="acct-hist-empty">Aún no has realizado compras.</div>';
-      } else {
-        comprasEl.innerHTML = orders.map(o => {
-          const pname = o.products?.name || 'Producto';
-          const amt   = parseFloat(o.amount_paid || o.products?.price || 0).toFixed(2);
-          const fecha = fmtDate(o.created_at);
-          return `<div class="acct-hist-item">
-            <div class="acct-hist-icon type-compra">${histIcon('compra')}</div>
-            <div class="acct-hist-body">
-              <div class="acct-hist-name">${esc(pname)}</div>
-              <div class="acct-hist-date">${fecha}</div>
-            </div>
-            <div class="acct-hist-amount neg">-$${amt}</div>
-          </div>`;
-        }).join('');
-      }
+      comprasEl.innerHTML = orders.map(o => {
+        const pname = o.products?.name || 'Producto';
+        const amt   = parseFloat(o.amount_paid || o.products?.price || 0).toFixed(2);
+        return `<div class="acct-hist-item">
+          <div class="acct-hist-icon type-compra">${histIcon('compra')}</div>
+          <div class="acct-hist-body">
+            <div class="acct-hist-name">${esc(pname)}</div>
+            <div class="acct-hist-date">${fmtDate(o.created_at)}</div>
+          </div>
+          <div class="acct-hist-amount neg">-$${amt}</div>
+        </div>`;
+      }).join('');
     }
   }
 
-  // ── Renderizar Movimientos ──
   if (recargasEl) {
-    if (movsResult.status === 'rejected' || movsResult.value?.error) {
-      recargasEl.innerHTML = `<div class="acct-hist-empty acct-hist-error">
-        Sin conexión — <button class="acct-retry-btn" onclick="retryHistory()">Reintentar</button>
-      </div>`;
+    const movs = _histCache.movs;
+    if (movs === null) {
+      recargasEl.innerHTML = '<div class="acct-hist-empty">Cargando...</div>';
+    } else if (movs.length === 0) {
+      recargasEl.innerHTML = '<div class="acct-hist-empty">Sin movimientos registrados.</div>';
     } else {
-      const movs = movsResult.value?.data;
-      if (!movs || movs.length === 0) {
-        recargasEl.innerHTML = '<div class="acct-hist-empty">Sin movimientos registrados.</div>';
-      } else {
-        recargasEl.innerHTML = movs.map(m => {
-          const amt   = parseFloat(m.amount || 0);
-          const sign  = m.type === 'transfer_out' ? '-' : (amt >= 0 ? '+' : '');
-          const fecha = fmtDate(m.created_at);
-          const nota  = m.note || (m.type === 'transfer_in' ? 'Recibido' : m.type === 'transfer_out' ? 'Enviado' : 'Recarga');
-          return `<div class="acct-hist-item">
-            <div class="acct-hist-icon ${histIconClass(m.type)}">${histIcon(m.type)}</div>
-            <div class="acct-hist-body">
-              <div class="acct-hist-name">${esc(nota)}</div>
-              <div class="acct-hist-date">${fecha}</div>
-            </div>
-            <div class="acct-hist-amount ${histAmountClass(m.type, amt)}">${sign}$${Math.abs(amt).toFixed(2)}</div>
-          </div>`;
-        }).join('');
-      }
+      recargasEl.innerHTML = movs.map(m => {
+        const amt  = parseFloat(m.amount || 0);
+        const sign = m.type === 'transfer_out' ? '-' : (amt >= 0 ? '+' : '');
+        const nota = m.note || (m.type === 'transfer_in' ? 'Recibido' : m.type === 'transfer_out' ? 'Enviado' : 'Recarga');
+        return `<div class="acct-hist-item">
+          <div class="acct-hist-icon ${histIconClass(m.type)}">${histIcon(m.type)}</div>
+          <div class="acct-hist-body">
+            <div class="acct-hist-name">${esc(nota)}</div>
+            <div class="acct-hist-date">${fmtDate(m.created_at)}</div>
+          </div>
+          <div class="acct-hist-amount ${histAmountClass(m.type, amt)}">${sign}$${Math.abs(amt).toFixed(2)}</div>
+        </div>`;
+      }).join('');
     }
   }
 
   syncHistScroll();
 }
 
-// Función global para que el botón "Reintentar" funcione con sesión fresca
-async function retryHistory() {
-  await db.auth.refreshSession().catch(() => {});
-  loadAccountHistory();
+async function loadAccountHistory() {
+  if (!currentUser) return;
+
+  // Si ya hay caché, renderizar al instante — sin tocar la red.
+  // Esto cubre el caso de minimizar/restaurar: el usuario ve sus datos
+  // inmediatamente, igual que una app nativa.
+  if (_histCache.orders !== null && _histCache.movs !== null) {
+    _renderHistory();
+    return;
+  }
+
+  // Primera carga: ir a la red
+  const uid = currentUser.id;
+
+  const [ordersResult, movsResult] = await Promise.allSettled([
+    db.from('orders')
+      .select('*, products(name, price)')
+      .eq('user_id', uid)
+      .order('created_at', { ascending: false })
+      .limit(20),
+    db.from('wallet_topups')
+      .select('*')
+      .eq('user_id', uid)
+      .order('created_at', { ascending: false })
+      .limit(20),
+  ]);
+
+  if (ordersResult.status === 'fulfilled' && !ordersResult.value.error) {
+    _histCache.orders = ordersResult.value.data || [];
+  } else {
+    _histCache.orders = [];
+  }
+
+  if (movsResult.status === 'fulfilled' && !movsResult.value.error) {
+    _histCache.movs = movsResult.value.data || [];
+  } else {
+    _histCache.movs = [];
+  }
+
+  _renderHistory();
 }
-document.addEventListener('visibilitychange', async () => {
+
+// Llamar esto después de una compra para que el historial se refresque
+function invalidateHistoryCache() {
+  _histCache.orders = null;
+  _histCache.movs   = null;
+}
+
+// ─── Al volver a la pestaña: renderizar desde caché sin red ────────
+document.addEventListener('visibilitychange', () => {
   if (document.visibilityState !== 'visible') return;
   if (!currentUser) return;
 
@@ -1253,15 +1257,8 @@ document.addEventListener('visibilitychange', async () => {
   if (saved) showView(saved);
 
   if (saved === 'account') {
-    // Forzar refresh del token ANTES de cualquier query.
-    // Sin esto, Supabase usa una conexión muerta tras la suspensión.
-    await db.auth.refreshSession().catch(() => {});
-
-    [currentProfile, currentWallet] = await Promise.all([
-      fetchProfile(currentUser.id),
-      fetchWallet(currentUser.id),
-    ]);
-    syncBalanceUI();
+    // Balance y perfil ya están en memoria — solo renderizar.
+    // El historial viene de caché: instantáneo, sin "Cargando...".
     renderAccountView();
   }
 });
@@ -1272,3 +1269,4 @@ function fmtDate(iso) {
   const d = new Date(iso);
   return d.toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' });
 }
+
