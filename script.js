@@ -1187,8 +1187,21 @@ async function loadAccountHistory() {
   setTimeout(syncHistScroll, 60);
 }
 
+// ─── Reanudar historial si la pestaña se suspendió a mitad de carga ──
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState !== 'visible') return;
+  if (!currentUser) return;
+
+  const stuck = [...document.querySelectorAll('.acct-hist-panel')]
+    .some(p => p.querySelector('.acct-hist-empty')?.textContent === 'Cargando...');
+
+  if (stuck) loadAccountHistory();
+});
+
+
 function fmtDate(iso) {
   if (!iso) return '—';
   const d = new Date(iso);
   return d.toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' });
 }
+
