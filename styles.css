@@ -1458,9 +1458,9 @@ textarea.input { resize: vertical; min-height: 80px; }
   align-items: center;
   gap: 5px;
   padding: 3px 10px 3px 8px;
-  border: 1.5px dashed rgba(255,255,255,0.2);
+  border: 1.5px dashed rgba(245, 158, 11, 0.55);
   border-radius: 20px;
-  color: rgba(255,255,255,0.35);
+  color: rgba(245, 158, 11, 0.8);
   font-size: 0.74rem;
   font-weight: 500;
   font-style: normal;
