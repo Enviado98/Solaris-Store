@@ -1184,7 +1184,7 @@ async function loadAccountHistory() {
   if (comprasEl) {
     if (ordersResult.status === 'rejected' || ordersResult.value?.error) {
       comprasEl.innerHTML = `<div class="acct-hist-empty acct-hist-error">
-        Sin conexión — <button class="acct-retry-btn" onclick="loadAccountHistory()">Reintentar</button>
+        Sin conexión — <button class="acct-retry-btn" onclick="retryHistory()">Reintentar</button>
       </div>`;
     } else {
       const orders = ordersResult.value?.data;
@@ -1212,7 +1212,7 @@ async function loadAccountHistory() {
   if (recargasEl) {
     if (movsResult.status === 'rejected' || movsResult.value?.error) {
       recargasEl.innerHTML = `<div class="acct-hist-empty acct-hist-error">
-        Sin conexión — <button class="acct-retry-btn" onclick="loadAccountHistory()">Reintentar</button>
+        Sin conexión — <button class="acct-retry-btn" onclick="retryHistory()">Reintentar</button>
       </div>`;
     } else {
       const movs = movsResult.value?.data;
@@ -1240,29 +1240,26 @@ async function loadAccountHistory() {
   syncHistScroll();
 }
 
-// ─── Reanudar historial si la pestaña se suspendió a mitad de carga ──
+// Función global para que el botón "Reintentar" funcione con sesión fresca
+async function retryHistory() {
+  await db.auth.refreshSession().catch(() => {});
+  loadAccountHistory();
+}
 document.addEventListener('visibilitychange', async () => {
   if (document.visibilityState !== 'visible') return;
-
-  // Esperar a que Supabase confirme la sesión (puede tardar tras suspensión)
-  // Reintentar hasta 5 veces con 600ms entre intentos antes de rendirse
-  let uid = currentUser?.id;
-  if (!uid) {
-    for (let i = 0; i < 5; i++) {
-      await new Promise(r => setTimeout(r, 600));
-      const { data: { session } } = await db.auth.getSession().catch(() => ({ data: { session: null } }));
-      if (session?.user) { uid = session.user.id; break; }
-    }
-    if (!uid) return; // Sin sesión tras reintentos, no hacer nada
-  }
+  if (!currentUser) return;
 
   const saved = sessionStorage.getItem('solaris_view');
   if (saved) showView(saved);
 
   if (saved === 'account') {
+    // Forzar refresh del token ANTES de cualquier query.
+    // Sin esto, Supabase usa una conexión muerta tras la suspensión.
+    await db.auth.refreshSession().catch(() => {});
+
     [currentProfile, currentWallet] = await Promise.all([
-      fetchProfile(uid),
-      fetchWallet(uid),
+      fetchProfile(currentUser.id),
+      fetchWallet(currentUser.id),
     ]);
     syncBalanceUI();
     renderAccountView();
@@ -1275,4 +1272,3 @@ function fmtDate(iso) {
   const d = new Date(iso);
   return d.toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' });
 }
-
