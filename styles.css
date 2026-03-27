@@ -1315,6 +1315,23 @@ textarea.input { resize: vertical; min-height: 80px; }
   font-size: 0.85rem;
   padding: 24px 0;
 }
+.acct-hist-error {
+  color: rgba(255,255,255,0.35);
+}
+.acct-retry-btn {
+  background: none;
+  border: 1px solid var(--gold);
+  color: var(--gold);
+  font-size: 0.82rem;
+  padding: 3px 12px;
+  border-radius: 20px;
+  cursor: pointer;
+  margin-left: 4px;
+  transition: background 0.2s;
+}
+.acct-retry-btn:hover {
+  background: rgba(200,134,10,0.15);
+}
 
 /* ── Transferir botón en balance card ── */
 #acct-transfer-trigger {
@@ -1439,6 +1456,11 @@ textarea.input { resize: vertical; min-height: 80px; }
   color: var(--gold);
   font-weight: 600;
   margin-top: 1px;
+}
+.acct-username-display.acct-username-placeholder {
+  color: rgba(255,255,255,0.28);
+  font-weight: 400;
+  font-style: italic;
 }
 
 /* ── Ícono del botón Transferir — rota al abrir ── */
