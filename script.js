@@ -804,7 +804,12 @@ function renderAccountView() {
       document.querySelectorAll('.acct-hist-tab').forEach(x => x.classList.remove('active'));
       t.classList.add('active');
       document.querySelectorAll('.acct-hist-panel').forEach(p => p.classList.add('hidden'));
-      document.getElementById('acct-hist-' + t.dataset.hist)?.classList.remove('hidden');
+      const panel = document.getElementById('acct-hist-' + t.dataset.hist);
+      if (panel) {
+        panel.classList.remove('hidden', 'anim-in');
+        void panel.offsetWidth; // fuerza reflow para reiniciar la animación
+        panel.classList.add('anim-in');
+      }
     });
   });
 
@@ -1094,17 +1099,7 @@ async function doSaveProfile() {
 
 
 
-// ─── Activa scroll solo si el contenido realmente desborda ──────
-// Usa requestAnimationFrame para medir DESPUÉS del paint,
-// cuando scrollHeight ya refleja el contenido real.
-function syncHistScroll() {
-  requestAnimationFrame(() => {
-    document.querySelectorAll('.acct-hist-panel').forEach(panel => {
-      const overflows = panel.scrollHeight > panel.clientHeight + 1;
-      panel.classList.toggle('scrollable', overflows);
-    });
-  });
-}
+
 // ─── Historia: SVG icons por tipo ──────────────────
 function histIcon(type) {
   const icons = {
@@ -1197,7 +1192,6 @@ function _renderHistory() {
     }
   }
 
-  syncHistScroll();
 }
 
 async function loadAccountHistory() {
@@ -1269,4 +1263,3 @@ function fmtDate(iso) {
   const d = new Date(iso);
   return d.toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' });
 }
-
