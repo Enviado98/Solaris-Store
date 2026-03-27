@@ -115,7 +115,6 @@ window.addEventListener('DOMContentLoaded', async () => {
 async function handleLogin(user) {
   currentUser = user;
 
-  // Mostrar UI inmediatamente sin esperar fetches
   ['nav-balance', 'nav-logout-btn', 'nav-cart-btn', 'nav-menu-btn', 'nav-account-btn'].forEach(id =>
     document.getElementById(id).classList.remove('hidden')
   );
@@ -631,9 +630,10 @@ function showView(name) {
   document.querySelectorAll('.bottom-btn').forEach(b => b.classList.remove('active'));
   document.querySelector(`.bottom-btn[data-view="${name}"]`)?.classList.add('active');
   document.getElementById('navbar').style.display = '';
+  // Guardar vista activa para restaurarla si la pestaña se suspende
+  sessionStorage.setItem('solaris_view', name);
   if (name === 'cart') renderCart();
   if (name === 'catalog') {
-    // Siempre volver a la grilla de categorías al entrar al catálogo
     document.getElementById('cat-grid')?.classList.remove('hidden');
     document.getElementById('products-panel')?.classList.add('hidden');
     currentCat = 'all';
@@ -1078,12 +1078,15 @@ async function doSaveProfile() {
 
 
 
-// ─── Activa scroll en historial solo si el contenido desborda ──
+// ─── Activa scroll solo si el contenido realmente desborda ──────
+// Usa requestAnimationFrame para medir DESPUÉS del paint,
+// cuando scrollHeight ya refleja el contenido real.
 function syncHistScroll() {
-  document.querySelectorAll('.acct-hist-panel').forEach(panel => {
-    const overflows = panel.scrollHeight > panel.clientHeight + 2;
-    panel.style.overflowY = overflows ? 'auto' : 'hidden';
-    panel.style.touchAction = overflows ? 'pan-y' : 'auto';
+  requestAnimationFrame(() => {
+    document.querySelectorAll('.acct-hist-panel').forEach(panel => {
+      const overflows = panel.scrollHeight > panel.clientHeight + 1;
+      panel.classList.toggle('scrollable', overflows);
+    });
   });
 }
 // ─── Historia: SVG icons por tipo ──────────────────
@@ -1184,7 +1187,7 @@ async function loadAccountHistory() {
       }).join('');
     }
   }
-  setTimeout(syncHistScroll, 60);
+  syncHistScroll();
 }
 
 // ─── Reanudar historial si la pestaña se suspendió a mitad de carga ──
@@ -1192,10 +1195,13 @@ document.addEventListener('visibilitychange', () => {
   if (document.visibilityState !== 'visible') return;
   if (!currentUser) return;
 
-  const stuck = [...document.querySelectorAll('.acct-hist-panel')]
-    .some(p => p.querySelector('.acct-hist-empty')?.textContent === 'Cargando...');
+  const saved = sessionStorage.getItem('solaris_view');
 
-  if (stuck) loadAccountHistory();
+  // Restaurar la vista donde el usuario estaba
+  if (saved) showView(saved);
+
+  // Si estaba en cuenta, recargar historial fresco
+  if (saved === 'account') renderAccountView();
 });
 
 
@@ -1204,4 +1210,3 @@ function fmtDate(iso) {
   const d = new Date(iso);
   return d.toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' });
 }
-
