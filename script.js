@@ -1154,22 +1154,40 @@ async function loadAccountHistory() {
     return;
   }
 
-  const uid = currentUser.id;
+  const uid        = currentUser.id;
+  const comprasEl  = document.getElementById('acct-hist-compras');
+  const recargasEl = document.getElementById('acct-hist-recargas');
 
-  // ── Compras ──
-  const comprasEl = document.getElementById('acct-hist-compras');
+  // Mostrar "Cargando..." en ambos a la vez
+  if (comprasEl)  comprasEl.innerHTML  = '<div class="acct-hist-empty">Cargando...</div>';
+  if (recargasEl) recargasEl.innerHTML = '<div class="acct-hist-empty">Cargando...</div>';
+
+  // Lanzar ambas queries EN PARALELO — ninguna bloquea a la otra
+  const [ordersResult, movsResult] = await Promise.allSettled([
+    withTimeout(
+      db.from('orders')
+        .select('*, products(name, price)')
+        .eq('user_id', uid)
+        .order('created_at', { ascending: false })
+        .limit(20)
+    ),
+    withTimeout(
+      db.from('wallet_topups')
+        .select('*')
+        .eq('user_id', uid)
+        .order('created_at', { ascending: false })
+        .limit(20)
+    ),
+  ]);
+
+  // ── Renderizar Compras ──
   if (comprasEl) {
-    comprasEl.innerHTML = '<div class="acct-hist-empty">Cargando...</div>';
-    try {
-      const { data: orders, error } = await withTimeout(
-        db.from('orders')
-          .select('*, products(name, price)')
-          .eq('user_id', uid)
-          .order('created_at', { ascending: false })
-          .limit(20)
-      );
-      if (error) throw error;
-
+    if (ordersResult.status === 'rejected' || ordersResult.value?.error) {
+      comprasEl.innerHTML = `<div class="acct-hist-empty acct-hist-error">
+        Sin conexión — <button class="acct-retry-btn" onclick="loadAccountHistory()">Reintentar</button>
+      </div>`;
+    } else {
+      const orders = ordersResult.value?.data;
       if (!orders || orders.length === 0) {
         comprasEl.innerHTML = '<div class="acct-hist-empty">Aún no has realizado compras.</div>';
       } else {
@@ -1187,28 +1205,17 @@ async function loadAccountHistory() {
           </div>`;
         }).join('');
       }
-    } catch (err) {
-      // Timeout o error de red — mostrar botón de reintentar, nunca dejar "Cargando..."
-      comprasEl.innerHTML = `<div class="acct-hist-empty acct-hist-error">
-        Sin conexión — <button class="acct-retry-btn" onclick="loadAccountHistory()">Reintentar</button>
-      </div>`;
     }
   }
 
-  // ── Movimientos (recargas + transferencias) ──
-  const recargasEl = document.getElementById('acct-hist-recargas');
+  // ── Renderizar Movimientos ──
   if (recargasEl) {
-    recargasEl.innerHTML = '<div class="acct-hist-empty">Cargando...</div>';
-    try {
-      const { data: movs, error } = await withTimeout(
-        db.from('wallet_topups')
-          .select('*')
-          .eq('user_id', uid)
-          .order('created_at', { ascending: false })
-          .limit(20)
-      );
-      if (error) throw error;
-
+    if (movsResult.status === 'rejected' || movsResult.value?.error) {
+      recargasEl.innerHTML = `<div class="acct-hist-empty acct-hist-error">
+        Sin conexión — <button class="acct-retry-btn" onclick="loadAccountHistory()">Reintentar</button>
+      </div>`;
+    } else {
+      const movs = movsResult.value?.data;
       if (!movs || movs.length === 0) {
         recargasEl.innerHTML = '<div class="acct-hist-empty">Sin movimientos registrados.</div>';
       } else {
@@ -1227,10 +1234,6 @@ async function loadAccountHistory() {
           </div>`;
         }).join('');
       }
-    } catch (err) {
-      recargasEl.innerHTML = `<div class="acct-hist-empty acct-hist-error">
-        Sin conexión — <button class="acct-retry-btn" onclick="loadAccountHistory()">Reintentar</button>
-      </div>`;
     }
   }
 
@@ -1272,3 +1275,4 @@ function fmtDate(iso) {
   const d = new Date(iso);
   return d.toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' });
 }
+
