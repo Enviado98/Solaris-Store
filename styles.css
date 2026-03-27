@@ -1246,14 +1246,15 @@ textarea.input { resize: vertical; min-height: 80px; }
 .acct-hist-panel {
   min-height: 60px;
   max-height: 300px;
-  overflow-y: auto;
-  /* Solo activa scroll cuando el contenido lo necesita.
-     overscroll-behavior: none evita que el panel absorba
-     el gesto cuando no hay nada que desplazar. */
+  /* Empieza bloqueado — JS lo abre solo si el contenido desborda */
+  overflow-y: hidden;
   overscroll-behavior-y: none;
-  /* Custom scrollbar */
   scrollbar-width: thin;
   scrollbar-color: var(--border) transparent;
+}
+/* JS añade esta clase cuando scrollHeight > clientHeight */
+.acct-hist-panel.scrollable {
+  overflow-y: auto;
 }
 .acct-hist-panel::-webkit-scrollbar { width: 4px; }
 .acct-hist-panel::-webkit-scrollbar-track { background: transparent; }
