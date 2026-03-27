@@ -1229,6 +1229,7 @@ textarea.input { resize: vertical; min-height: 80px; }
   transform: translateY(1px);
   box-shadow: 0 2px 6px rgba(0,0,0,0.2);
 }
+.acct-transfer-trigger svg { pointer-events: none; }
 .acct-transfer-trigger.frozen {
   background: rgba(255,255,255,0.06);
   border-color: rgba(255,255,255,0.12);
