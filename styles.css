@@ -1242,17 +1242,34 @@ textarea.input { resize: vertical; min-height: 80px; }
   box-shadow: 0 1px 4px rgba(0,0,0,0.08);
 }
 
-/* History items */
-.acct-hist-panel { min-height: 60px; }
+/* History panel scroll container */
+.acct-hist-panel {
+  min-height: 60px;
+  max-height: 300px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  /* Custom scrollbar */
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
+.acct-hist-panel::-webkit-scrollbar { width: 4px; }
+.acct-hist-panel::-webkit-scrollbar-track { background: transparent; }
+.acct-hist-panel::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 4px;
+}
 .acct-hist-panel.hidden { display: none; }
+
 .acct-hist-item {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 11px 0;
+  padding: 10px 2px;
   border-bottom: 1px solid var(--border);
 }
 .acct-hist-item:last-child { border-bottom: none; }
+
+/* SVG icons */
 .acct-hist-icon {
   width: 36px; height: 36px;
   border-radius: 10px;
@@ -1260,28 +1277,34 @@ textarea.input { resize: vertical; min-height: 80px; }
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  font-size: 1rem;
 }
-.acct-hist-icon.compra { background: rgba(18,168,130,0.12); color: #12a882; }
-.acct-hist-icon.recarga { background: rgba(194,122,0,0.12); color: var(--gold); }
+.acct-hist-icon svg { display: block; }
+
+.acct-hist-icon.type-compra    { background: rgba(192,57,43,0.10);  color: #c0392b; }
+.acct-hist-icon.type-topup     { background: rgba(194,122,0,0.12);  color: var(--gold); }
+.acct-hist-icon.type-in        { background: rgba(18,168,130,0.12); color: #12a882; }
+.acct-hist-icon.type-out       { background: rgba(100,80,180,0.12); color: #6450b4; }
+
 .acct-hist-body { flex: 1; min-width: 0; }
 .acct-hist-name {
-  font-size: 0.88rem;
+  font-size: 0.86rem;
   font-weight: 600;
   color: var(--text);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
-.acct-hist-date { font-size: 0.74rem; color: var(--text-dim); margin-top: 2px; }
+.acct-hist-date { font-size: 0.72rem; color: var(--text-dim); margin-top: 2px; }
 .acct-hist-amount {
   font-family: 'Rajdhani', sans-serif;
   font-weight: 700;
   font-size: 0.95rem;
   flex-shrink: 0;
 }
-.acct-hist-amount.compra { color: #c0392b; }
-.acct-hist-amount.recarga { color: #12a882; }
+.acct-hist-amount.neg { color: #c0392b; }
+.acct-hist-amount.pos { color: #12a882; }
+.acct-hist-amount.out { color: #6450b4; }
+
 .acct-hist-empty {
   text-align: center;
   color: var(--text-dim);
