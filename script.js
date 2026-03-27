@@ -61,6 +61,9 @@ let cart           = JSON.parse(localStorage.getItem('solaris_cart') || '[]');
 //  INIT
 // ══════════════════════════════════════════════════
 window.addEventListener('DOMContentLoaded', async () => {
+  // Inicializar listeners de la vista de cuenta (una sola vez)
+  initAccountListeners();
+
   // WhatsApp button
   const wa = Object.assign(document.createElement('a'), {
     href: `https://wa.me/${WA_NUMBER}`,
@@ -739,87 +742,16 @@ function renderAccountView() {
   document.getElementById('acct-balance-val').textContent = '$' + bal;
 
   // Perfil
-  const username = currentProfile?.username  || '';
+  const username = currentProfile?.username || '';
   const email    = currentUser?.email || '';
 
-  document.getElementById('acct-email-display').textContent    = email;
+  document.getElementById('acct-email-display').textContent = email;
 
   const uDisp = document.getElementById('acct-username-display');
   uDisp.textContent = username ? '@' + username : 'Sin username';
 
   const avatarEl = document.getElementById('acct-avatar-initials');
   avatarEl.textContent = (username[0] || email[0] || '?').toUpperCase();
-
-  // ── Transferir toggle ──
-  _bindOnce('acct-transfer-trigger', 'click', () => {
-    if (!currentProfile?.username) {
-      toast('Debes configurar tu @usuario antes de transferir', 'error');
-      // Abrir el form de editar perfil directamente
-      document.getElementById('acct-edit-form').classList.remove('hidden');
-      document.getElementById('acct-username-input').focus();
-      return;
-    }
-    document.getElementById('acct-transfer-panel').classList.toggle('hidden');
-    document.getElementById('acct-edit-form').classList.add('hidden');
-  });
-  _bindOnce('tr-cancel-btn', 'click', () => {
-    document.getElementById('acct-transfer-panel').classList.add('hidden');
-    document.getElementById('tr-username').value = '';
-    document.getElementById('tr-amount').value   = '';
-    document.getElementById('tr-user-feedback').textContent = '';
-    document.getElementById('tr-user-feedback').className = 'acct-user-feedback';
-  });
-
-  // Username check en tiempo real (transfer)
-  _bindOnce('tr-username', 'input', () => {
-    const fb = document.getElementById('tr-user-feedback');
-    const val = document.getElementById('tr-username').value.trim().toLowerCase();
-    clearTimeout(_usernameCheckTimer);
-    if (!val) { fb.textContent = ''; fb.className = 'acct-user-feedback'; return; }
-    fb.textContent = 'Buscando...';
-    fb.className = 'acct-user-feedback checking';
-    _usernameCheckTimer = setTimeout(() => checkTransferUser(val, fb), 500);
-  });
-
-  // Enviar transferencia
-  _bindOnce('tr-send-btn', 'click', doTransfer);
-
-  // ── Edit perfil toggle ──
-  _bindOnce('acct-edit-btn', 'click', () => {
-    const form = document.getElementById('acct-edit-form');
-    form.classList.toggle('hidden');
-    if (!form.classList.contains('hidden')) {
-      document.getElementById('acct-username-input').value = currentProfile?.username  || '';
-      document.getElementById('acct-username-feedback').textContent = '';
-      document.getElementById('acct-transfer-panel').classList.add('hidden');
-    }
-  });
-  _bindOnce('acct-cancel-name', 'click', () => {
-    document.getElementById('acct-edit-form').classList.add('hidden');
-  });
-
-  // Username check en tiempo real (editar perfil)
-  _bindOnce('acct-username-input', 'input', () => {
-    const fb  = document.getElementById('acct-username-feedback');
-    const val = document.getElementById('acct-username-input').value.trim().toLowerCase();
-    clearTimeout(_usernameCheckTimer);
-    if (!val) { fb.textContent = ''; fb.className = 'acct-user-feedback'; return; }
-    if (val === currentProfile?.username) {
-      fb.textContent = 'Ese es tu username actual';
-      fb.className = 'acct-user-feedback ok';
-      return;
-    }
-    if (!/^[a-z0-9._]{3,20}$/.test(val)) {
-      fb.textContent = 'Solo letras, números, puntos y _ (3-20 caracteres)';
-      fb.className = 'acct-user-feedback error';
-      return;
-    }
-    fb.textContent = 'Verificando disponibilidad...';
-    fb.className = 'acct-user-feedback checking';
-    _usernameCheckTimer = setTimeout(() => checkUsernameAvailable(val, fb), 500);
-  });
-
-  _bindOnce('acct-save-name', 'click', doSaveProfile);
 
   // ── Historial tabs ──
   document.querySelectorAll('.acct-hist-tab').forEach(tab => {
@@ -846,6 +778,77 @@ function _bindOnce(id, event, fn) {
   if (!el) return;
   const fresh = _rebind(el);
   fresh.addEventListener(event, fn);
+}
+
+function initAccountListeners() {
+  // ── Transferir toggle ──
+  document.getElementById('acct-transfer-trigger')?.addEventListener('click', () => {
+    if (!currentProfile?.username) {
+      toast('Configura tu @usuario antes de transferir', 'error');
+      document.getElementById('acct-edit-form').classList.remove('hidden');
+      document.getElementById('acct-username-input')?.focus();
+      return;
+    }
+    document.getElementById('acct-transfer-panel').classList.toggle('hidden');
+    document.getElementById('acct-edit-form').classList.add('hidden');
+  });
+
+  document.getElementById('tr-cancel-btn')?.addEventListener('click', () => {
+    document.getElementById('acct-transfer-panel').classList.add('hidden');
+    document.getElementById('tr-username').value = '';
+    document.getElementById('tr-amount').value   = '';
+    document.getElementById('tr-user-feedback').textContent = '';
+    document.getElementById('tr-user-feedback').className = 'acct-user-feedback';
+  });
+
+  document.getElementById('tr-username')?.addEventListener('input', () => {
+    const fb  = document.getElementById('tr-user-feedback');
+    const val = document.getElementById('tr-username').value.trim().toLowerCase();
+    clearTimeout(_usernameCheckTimer);
+    if (!val) { fb.textContent = ''; fb.className = 'acct-user-feedback'; return; }
+    fb.textContent = 'Buscando...';
+    fb.className = 'acct-user-feedback checking';
+    _usernameCheckTimer = setTimeout(() => checkTransferUser(val, fb), 500);
+  });
+
+  document.getElementById('tr-send-btn')?.addEventListener('click', doTransfer);
+
+  // ── Edit perfil toggle ──
+  document.getElementById('acct-edit-btn')?.addEventListener('click', () => {
+    const form = document.getElementById('acct-edit-form');
+    form.classList.toggle('hidden');
+    if (!form.classList.contains('hidden')) {
+      document.getElementById('acct-username-input').value = currentProfile?.username || '';
+      document.getElementById('acct-username-feedback').textContent = '';
+      document.getElementById('acct-transfer-panel').classList.add('hidden');
+    }
+  });
+
+  document.getElementById('acct-cancel-name')?.addEventListener('click', () => {
+    document.getElementById('acct-edit-form').classList.add('hidden');
+  });
+
+  document.getElementById('acct-username-input')?.addEventListener('input', () => {
+    const fb  = document.getElementById('acct-username-feedback');
+    const val = document.getElementById('acct-username-input').value.trim().toLowerCase();
+    clearTimeout(_usernameCheckTimer);
+    if (!val) { fb.textContent = ''; fb.className = 'acct-user-feedback'; return; }
+    if (val === (currentProfile?.username || '').toLowerCase()) {
+      fb.textContent = 'Ese es tu username actual';
+      fb.className = 'acct-user-feedback ok';
+      return;
+    }
+    if (!/^[a-z0-9._]{3,20}$/.test(val)) {
+      fb.textContent = 'Solo letras, números, puntos y _ (3-20 caracteres)';
+      fb.className = 'acct-user-feedback error';
+      return;
+    }
+    fb.textContent = 'Verificando...';
+    fb.className = 'acct-user-feedback checking';
+    _usernameCheckTimer = setTimeout(() => checkUsernameAvailable(val, fb), 500);
+  });
+
+  document.getElementById('acct-save-name')?.addEventListener('click', doSaveProfile);
 }
 
 async function checkTransferUser(username, fb) {
