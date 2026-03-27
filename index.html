@@ -408,28 +408,47 @@
         </div>
 
         <!-- Perfil -->
-        <div class="acct-section">
+        <div class="acct-section acct-profile-section" id="acct-profile-section">
           <div class="acct-section-title">Perfil</div>
-          <div class="acct-profile-row">
+
+          <!-- Vista estática -->
+          <div class="acct-profile-card" id="acct-profile-card">
             <div class="acct-avatar" id="acct-avatar-initials">?</div>
             <div class="acct-profile-info">
-              <div class="acct-username-display" id="acct-username-display"></div>
+              <div class="acct-username-display" id="acct-username-display">—</div>
               <div class="acct-email" id="acct-email-display">—</div>
             </div>
-            <button class="acct-edit-btn" id="acct-edit-btn" title="Editar perfil">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+            <button class="acct-edit-btn" id="acct-edit-btn" title="Editar usuario" aria-label="Editar usuario">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/>
+                <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
+              </svg>
+              <span class="acct-edit-label">Editar</span>
             </button>
           </div>
-          <div class="acct-edit-form hidden" id="acct-edit-form">
-            <label class="acct-field-label" style="margin-top:12px">Nombre de usuario</label>
-            <div class="acct-username-wrap">
-              <span class="acct-at">@</span>
-              <input type="text" class="input acct-username-input" id="acct-username-input" placeholder="tuusuario" maxlength="20" autocapitalize="none">
-            </div>
-            <div class="acct-user-feedback" id="acct-username-feedback"></div>
-            <div style="display:flex;gap:8px;margin-top:10px">
-              <button class="btn-primary" style="flex:1;padding:10px" id="acct-save-name">Guardar</button>
-              <button class="btn-secondary" style="flex:1;padding:10px" id="acct-cancel-name">Cancelar</button>
+
+          <!-- Formulario de edición (animado) -->
+          <div class="acct-edit-form" id="acct-edit-form">
+            <div class="acct-edit-inner">
+              <div class="acct-edit-header">
+                <span class="acct-edit-title">Cambiar @usuario</span>
+                <div class="acct-cooldown-note" id="acct-cooldown-note">
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                  Puedes cambiarlo 1 vez cada 7 días
+                </div>
+              </div>
+              <div class="acct-username-wrap acct-edit-input-wrap">
+                <span class="acct-at">@</span>
+                <input type="text" class="input acct-username-input" id="acct-username-input" placeholder="tuusuario" maxlength="20" autocapitalize="none" autocomplete="off">
+              </div>
+              <div class="acct-user-feedback" id="acct-username-feedback"></div>
+              <div class="acct-edit-actions">
+                <button class="acct-save-btn" id="acct-save-name">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                  Guardar
+                </button>
+                <button class="acct-cancel-btn" id="acct-cancel-name">Cancelar</button>
+              </div>
             </div>
           </div>
         </div>
@@ -489,4 +508,3 @@
   <script src="script.js"></script>
 </body>
 </html>
-
