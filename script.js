@@ -784,11 +784,17 @@ function renderAccountView() {
 
   const uDisp = document.getElementById('acct-username-display');
   if (username) {
-    uDisp.textContent = '@' + username;
+    uDisp.innerHTML = '@' + username;
     uDisp.classList.remove('acct-username-placeholder');
+    uDisp.onclick = null;
   } else {
-    uDisp.textContent = 'usuario';
+    uDisp.innerHTML = `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>Configurar usuario`;
     uDisp.classList.add('acct-username-placeholder');
+    uDisp.onclick = () => {
+      document.getElementById('acct-edit-form').classList.add('open');
+      document.getElementById('acct-edit-btn')?.classList.add('active');
+      document.getElementById('acct-username-input')?.focus();
+    };
   }
 
   const avatarEl = document.getElementById('acct-avatar-initials');
