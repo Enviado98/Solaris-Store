@@ -136,9 +136,7 @@ async function handleLogin(user) {
   // Restaurar la vista donde el usuario estaba antes de minimizar/suspender
   const savedView = sessionStorage.getItem('solaris_view') || 'catalog';
   showView(savedView);
-  // El navbar acaba de salir de 'hidden' (display:none), por lo que
-  // getBoundingClientRect() puede devolver 0 en los primeros frames.
-  // Reintentamos hasta que el botón tenga dimensiones reales.
+  // Reintentar hasta que el botón tenga dimensiones reales
   let attempts = 0;
   function tryMoveSlider() {
     const activeBtn = document.querySelector(`.bottom-btn[data-view="${savedView}"]`);
@@ -1341,3 +1339,31 @@ function fmtDate(iso) {
   const d = new Date(iso);
   return d.toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' });
 }
+
+// ── SWIPE ENTRE VISTAS ──────────────────────────
+(function() {
+  const VIEWS = ['catalog', 'cart', 'account'];
+  let x0 = 0, y0 = 0, locked = null;
+
+  function currentIdx() {
+    const v = sessionStorage.getItem('solaris_view') || 'catalog';
+    const i = VIEWS.indexOf(v);
+    return i === -1 ? 0 : i;
+  }
+
+  document.addEventListener('touchstart', e => {
+    x0 = e.touches[0].clientX;
+    y0 = e.touches[0].clientY;
+    locked = null;
+  }, { passive: true });
+
+  document.addEventListener('touchend', e => {
+    const dx = e.changedTouches[0].clientX - x0;
+    const dy = e.changedTouches[0].clientY - y0;
+    if (Math.abs(dx) < 40 || Math.abs(dx) < Math.abs(dy) * 1.5) return;
+    if (!locked) locked = 'x';
+    const idx = currentIdx();
+    if (dx < 0 && idx < VIEWS.length - 1) showView(VIEWS[idx + 1]);
+    if (dx > 0 && idx > 0)               showView(VIEWS[idx - 1]);
+  }, { passive: true });
+})();
