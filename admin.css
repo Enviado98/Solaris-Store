@@ -412,3 +412,61 @@ textarea.input { resize: vertical; min-height: 70px; }
   vertical-align: middle;
   margin-left: 4px;
 }
+
+/* ── User action pills ───────────────────── */
+.admin-item {
+  flex-direction: column;
+  align-items: stretch;
+}
+.user-pill-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  margin-top: 10px;
+}
+.upill {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  border: none;
+  border-radius: 20px;
+  font-family: inherit;
+  font-size: 0.78rem;
+  font-weight: 600;
+  padding: 6px 10px;
+  cursor: pointer;
+  transition: opacity 0.18s, transform 0.1s;
+  white-space: nowrap;
+}
+.upill:hover  { opacity: 0.82; }
+.upill:active { transform: scale(0.96); }
+
+.upill-icon {
+  font-size: 0.82rem;
+  font-style: normal;
+}
+
+.upill-credit {
+  background: rgba(181,115,10,0.1);
+  color: var(--gold);
+  border: 1px solid rgba(181,115,10,0.25);
+}
+.upill-orders {
+  background: var(--bg3);
+  color: var(--text-dim);
+  border: 1px solid var(--border);
+}
+.upill-block {
+  background: rgba(229,57,53,0.08);
+  color: var(--red);
+  border: 1px solid rgba(229,57,53,0.2);
+}
+.upill-unblock {
+  background: rgba(22,163,74,0.08);
+  color: var(--green);
+  border: 1px solid rgba(22,163,74,0.2);
+}
+
+/* ── Override: actions no longer flex row ── */
+.admin-item-actions { display: none; }

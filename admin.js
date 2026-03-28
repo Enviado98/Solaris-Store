@@ -269,18 +269,19 @@ function renderUsers() {
           ${esc(u.email || '')} · Saldo: <strong style="color:var(--gold)">$${price(u.balance || 0)}</strong>
         </div>
       </div>
-      <div class="admin-item-actions">
-        <button class="btn-credit" onclick="openCreditModal('${u.id}', '${displayName}')">
-          + Crédito
+      <div class="user-pill-grid">
+        <button class="upill upill-credit" onclick="openCreditModal('${u.id}', '${displayName}')">
+          <span class="upill-icon">$+</span> Crédito
         </button>
-        <button class="btn btn-neutral" onclick="openOrdersModal('${u.id}', '${displayName}')">
-          Órdenes
+        <button class="upill upill-orders" onclick="openOrdersModal('${u.id}', '${displayName}')">
+          <span class="upill-icon">📋</span> Órdenes
         </button>
         ${!isAdmin ? `
-        <button class="btn ${isBlocked ? 'btn-success' : 'btn-danger'}"
+        <button class="upill ${isBlocked ? 'upill-unblock' : 'upill-block'}"
           onclick="toggleBlock('${u.id}', ${isBlocked}, '${displayName}')">
-          ${isBlocked ? '✓ Desbloquear' : '🔒 Bloquear'}
-        </button>` : ''}
+          <span class="upill-icon">${isBlocked ? '🔓' : '🔒'}</span>
+          ${isBlocked ? 'Desbloquear' : 'Bloquear'}
+        </button>` : '<div></div>'}
       </div>
     </div>`;
   }).join('');
