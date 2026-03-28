@@ -3,17 +3,17 @@
    ═══════════════════════════════════════════ */
 
 :root {
-  --bg:     #0d0d0f;
-  --bg2:    #141417;
-  --bg3:    #1b1b1f;
-  --border: #2a2a2f;
-  --text:   #f0f0f0;
+  --bg:       #f5f5f7;
+  --bg2:      #ffffff;
+  --bg3:      #ebebed;
+  --border:   #d4d4da;
+  --text:     #111113;
   --text-dim: #888;
-  --gold:   #c8860a;
-  --gold-glow: rgba(200,134,10,0.08);
-  --red:    #e53935;
-  --green:  #22c55e;
-  --radius: 12px;
+  --gold:     #b5730a;
+  --gold-glow: rgba(181,115,10,0.07);
+  --red:      #e53935;
+  --green:    #16a34a;
+  --radius:   12px;
 }
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -48,7 +48,7 @@ body {
 /* ── Header ─────────────────────────────── */
 .admin-header {
   position: sticky; top: 0; z-index: 100;
-  background: rgba(13,13,15,0.92);
+  background: rgba(245,245,247,0.92);
   backdrop-filter: blur(12px);
   border-bottom: 1px solid var(--border);
   padding: 0 20px;
@@ -127,7 +127,7 @@ body {
 .tab-btn.active {
   background: var(--bg3);
   color: var(--gold);
-  box-shadow: 0 1px 4px rgba(0,0,0,0.3);
+  box-shadow: 0 1px 4px rgba(0,0,0,0.1);
 }
 .tab-btn:hover:not(.active) { color: var(--text); }
 
@@ -324,7 +324,7 @@ textarea.input { resize: vertical; min-height: 70px; }
 /* ── Modal ──────────────────────────────── */
 #modal {
   position: fixed; inset: 0; z-index: 1000;
-  background: rgba(0,0,0,0.7);
+  background: rgba(0,0,0,0.4);
   backdrop-filter: blur(4px);
   display: flex; align-items: center; justify-content: center;
   padding: 20px;
@@ -365,7 +365,7 @@ textarea.input { resize: vertical; min-height: 70px; }
   font-size: 0.85rem; font-weight: 500;
   padding: 10px 20px;
   border-radius: 24px;
-  box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.12);
   transition: transform 0.28s cubic-bezier(.34,1.56,.64,1);
   z-index: 9000; pointer-events: none;
   white-space: nowrap;

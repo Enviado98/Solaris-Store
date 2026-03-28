@@ -60,10 +60,10 @@ window.addEventListener('DOMContentLoaded', async () => {
   setupModal();
 
   await Promise.all([
-    loadStats(),
     loadAdminProducts(),
     loadAdminUsers(),
   ]);
+  loadStats(); // después de usuarios para tener _allUsers.length
 
   // ── Add product btn
   document.getElementById('add-product-btn').addEventListener('click', addProduct);
@@ -78,15 +78,15 @@ function redirectToLogin(msg) {
 //  STATS
 // ══════════════════════════════════════════════
 async function loadStats() {
-  const [usersRes, prodsRes, ordersRes, walletsRes] = await Promise.allSettled([
-    db.from('profiles').select('id', { count: 'exact', head: true }),
+  const [prodsRes, ordersRes, walletsRes] = await Promise.allSettled([
     db.from('products').select('id', { count: 'exact', head: true }).eq('is_active', true),
     db.from('orders').select('id', { count: 'exact', head: true }).eq('status', 'completed'),
     db.from('wallets').select('balance'),
   ]);
 
-  if (usersRes.status === 'fulfilled')
-    document.getElementById('stat-users').textContent = usersRes.value.count ?? '—';
+  // El conteo de usuarios lo sacamos de _allUsers (cargado por la RPC)
+  // para evitar el bloqueo de RLS en profiles
+  document.getElementById('stat-users').textContent = _allUsers.length || '—';
 
   if (prodsRes.status === 'fulfilled')
     document.getElementById('stat-products').textContent = prodsRes.value.count ?? '—';
@@ -223,10 +223,16 @@ async function addProduct() {
 let _allUsers = [];
 
 async function loadAdminUsers() {
-  const { data } = await db
-    .from('profiles')
-    .select('*, wallets(balance)')
-    .order('created_at', { ascending: false });
+  // Usamos una RPC SECURITY DEFINER para poder leer todos los perfiles
+  // aunque RLS esté activo, y para obtener el email de auth.users
+  const { data, error } = await db.rpc('get_all_profiles_admin');
+
+  if (error) {
+    console.error('Error cargando usuarios:', error.message);
+    document.getElementById('admin-users-list').innerHTML =
+      `<div class="no-items" style="color:var(--red)">Error: ${error.message}</div>`;
+    return;
+  }
 
   _allUsers = data || [];
   renderUsers();
@@ -255,7 +261,7 @@ function renderUsers() {
           ${u.is_admin ? ' 👑' : ''}
         </div>
         <div class="admin-item-meta">
-          ${esc(u.email || '')} · Saldo: <strong style="color:var(--gold)">$${price(u.wallets?.balance || 0)}</strong>
+          ${esc(u.email || '')} · Saldo: <strong style="color:var(--gold)">$${price(u.balance || 0)}</strong>
         </div>
       </div>
       <div class="admin-item-actions">
