@@ -253,27 +253,37 @@ function renderUsers() {
     return;
   }
 
-  el.innerHTML = list.map(u => `
-    <div class="admin-item">
+  el.innerHTML = list.map(u => {
+    const displayName = u.username ? '@' + esc(u.username) : esc(u.email || '—');
+    const isBlocked   = u.is_blocked;
+    const isAdmin     = u.is_admin;
+    return `
+    <div class="admin-item ${isBlocked ? 'admin-item-blocked' : ''}">
       <div class="admin-item-info">
         <div class="admin-item-name">
-          ${u.username ? '@' + esc(u.username) : esc(u.email || '—')}
-          ${u.is_admin ? ' 👑' : ''}
+          ${displayName}
+          ${isAdmin   ? ' 👑' : ''}
+          ${isBlocked ? ' <span class=\"badge-blocked\">BLOQUEADO</span>' : ''}
         </div>
         <div class="admin-item-meta">
           ${esc(u.email || '')} · Saldo: <strong style="color:var(--gold)">$${price(u.balance || 0)}</strong>
         </div>
       </div>
       <div class="admin-item-actions">
-        <button class="btn-credit" onclick="openCreditModal('${u.id}', '${esc(u.username ? '@'+u.username : u.email)}')">
+        <button class="btn-credit" onclick="openCreditModal('${u.id}', '${displayName}')">
           + Crédito
         </button>
-        <button class="btn btn-neutral" onclick="openOrdersModal('${u.id}', '${esc(u.username ? '@'+u.username : u.email)}')">
+        <button class="btn btn-neutral" onclick="openOrdersModal('${u.id}', '${displayName}')">
           Órdenes
         </button>
+        ${!isAdmin ? `
+        <button class="btn ${isBlocked ? 'btn-success' : 'btn-danger'}"
+          onclick="toggleBlock('${u.id}', ${isBlocked}, '${displayName}')">
+          ${isBlocked ? '✓ Desbloquear' : '🔒 Bloquear'}
+        </button>` : ''}
       </div>
-    </div>`
-  ).join('');
+    </div>`;
+  }).join('');
 }
 
 function openCreditModal(userId, userName) {
@@ -407,4 +417,42 @@ function toast(msg, type = '') {
   el.className = `show ${type}`;
   clearTimeout(_toastTimer);
   _toastTimer = setTimeout(() => { el.className = ''; }, 3000);
+}
+
+// ══════════════════════════════════════════════
+//  BLOQUEAR / DESBLOQUEAR
+// ══════════════════════════════════════════════
+async function toggleBlock(userId, currentlyBlocked, userName) {
+  const action = currentlyBlocked ? 'desbloquear' : 'bloquear';
+  showModal(
+    `${currentlyBlocked ? '✓ Desbloquear' : '🔒 Bloquear'} — ${userName}`,
+    `<p style="color:var(--text-dim);font-size:0.87rem;margin-bottom:16px">
+      ¿Confirmas que deseas <strong>${action}</strong> a ${userName}?
+      ${!currentlyBlocked ? '<br><span style="font-size:0.8rem;opacity:0.7">El usuario no podrá iniciar sesión mientras esté bloqueado.</span>' : ''}
+     </p>
+     <div class="modal-actions">
+       <button class="btn btn-neutral" onclick="closeModal()">Cancelar</button>
+       <button class="btn ${currentlyBlocked ? 'btn-success' : 'btn-danger'}"
+         onclick="confirmToggleBlock('${userId}', ${currentlyBlocked})">
+         Sí, ${action}
+       </button>
+     </div>`
+  );
+}
+
+async function confirmToggleBlock(userId, currentlyBlocked) {
+  const { error } = await db.rpc('admin_set_blocked', {
+    p_user_id: userId,
+    p_blocked: !currentlyBlocked,
+  });
+
+  closeModal();
+
+  if (error) {
+    toast('Error: ' + error.message, 'error');
+    return;
+  }
+
+  toast(currentlyBlocked ? 'Usuario desbloqueado ✓' : 'Usuario bloqueado ✓');
+  loadAdminUsers();
 }

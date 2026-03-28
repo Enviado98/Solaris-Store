@@ -393,3 +393,22 @@ textarea.input { resize: vertical; min-height: 70px; }
   .admin-stats { grid-template-columns: 1fr 1fr; }
   .form-grid { grid-template-columns: 1fr; }
 }
+
+/* ── Blocked user styles ─────────────────── */
+.admin-item-blocked {
+  border-color: rgba(229,57,53,0.2);
+  background: rgba(229,57,53,0.03);
+}
+.badge-blocked {
+  display: inline-block;
+  background: rgba(229,57,53,0.12);
+  color: var(--red);
+  border: 1px solid rgba(229,57,53,0.25);
+  border-radius: 5px;
+  font-size: 0.65rem;
+  font-weight: 700;
+  padding: 1px 6px;
+  letter-spacing: 0.05em;
+  vertical-align: middle;
+  margin-left: 4px;
+}

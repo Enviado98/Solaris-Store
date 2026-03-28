@@ -208,8 +208,20 @@ async function handleLogin(user) {
     if (savedView === 'account') renderAccountView();
   });
 
-  fetchProfile(user.id).then(profile => {
+  fetchProfile(user.id).then(async profile => {
     if (!profile) return;
+
+    // ── Verificar bloqueo ──
+    if (profile.is_blocked) {
+      await db.auth.signOut();
+      handleLogout();
+      // Mostrar mensaje de bloqueo en el login
+      setTimeout(() => {
+        setMsg('auth-msg', 'Tu cuenta ha sido bloqueada. Contacta al soporte.', 'error');
+      }, 300);
+      return;
+    }
+
     currentProfile = profile;
     CACHE.set('profile_' + user.id, profile);
     if (profile?.is_admin)
