@@ -281,7 +281,11 @@ function renderUsers() {
           onclick="toggleBlock('${u.id}', ${isBlocked}, '${displayName}')">
           <span class="upill-icon">${isBlocked ? '🔓' : '🔒'}</span>
           ${isBlocked ? 'Desbloquear' : 'Bloquear'}
-        </button>` : '<div></div>'}
+        </button>
+        <button class="upill upill-delete"
+          onclick="deleteUser('${u.id}', '${displayName}')">
+          <span class="upill-icon">🗑️</span> Eliminar
+        </button>` : '<div></div><div></div>'}
       </div>
     </div>`;
   }).join('');
@@ -456,4 +460,32 @@ async function confirmToggleBlock(userId, currentlyBlocked) {
 
   toast(currentlyBlocked ? 'Usuario desbloqueado ✓' : 'Usuario bloqueado ✓');
   loadAdminUsers();
+}
+
+// ══════════════════════════════════════════════
+//  ELIMINAR USUARIO
+// ══════════════════════════════════════════════
+function deleteUser(userId, userName) {
+  showModal(
+    `🗑️ Eliminar cuenta — ${userName}`,
+    `<p style="color:var(--text-dim);font-size:0.87rem;margin-bottom:8px">
+      Esta acción es <strong style="color:var(--red)">permanente e irreversible</strong>.
+     </p>
+     <p style="color:var(--text-dim);font-size:0.82rem;margin-bottom:16px">
+      Se borrarán la cuenta, wallet y todos los datos de ${userName}.
+     </p>
+     <div class="modal-actions">
+       <button class="btn btn-neutral" onclick="closeModal()">Cancelar</button>
+       <button class="btn btn-danger" onclick="confirmDeleteUser('${userId}')">Sí, eliminar</button>
+     </div>`
+  );
+}
+
+async function confirmDeleteUser(userId) {
+  const { error } = await db.rpc('admin_delete_user', { p_user_id: userId });
+  closeModal();
+  if (error) { toast('Error: ' + error.message, 'error'); return; }
+  toast('Usuario eliminado ✓');
+  loadAdminUsers();
+  loadStats();
 }

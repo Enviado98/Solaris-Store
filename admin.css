@@ -470,3 +470,9 @@ textarea.input { resize: vertical; min-height: 70px; }
 
 /* ── Override: actions no longer flex row ── */
 .admin-item-actions { display: none; }
+.upill-delete {
+  background: rgba(229,57,53,0.06);
+  color: #b71c1c;
+  border: 1px solid rgba(229,57,53,0.18);
+}
+.upill-delete:hover { background: rgba(229,57,53,0.14); }
