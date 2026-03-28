@@ -136,8 +136,8 @@ async function handleLogin(user) {
   // Restaurar la vista donde el usuario estaba antes de minimizar/suspender
   const savedView = sessionStorage.getItem('solaris_view') || 'catalog';
   showView(savedView);
-  // Pequeño delay para asegurar que el DOM esté pintado antes de medir
-  requestAnimationFrame(() => moveBottomSlider(savedView));
+  // Doble rAF: el primero espera el commit del layout, el segundo espera el paint
+  requestAnimationFrame(() => requestAnimationFrame(() => moveBottomSlider(savedView, true)));
   loadProducts();
 
   // Cargar profile y wallet en paralelo en segundo plano
@@ -671,15 +671,24 @@ async function addCredit(userId) {
 // ══════════════════════════════════════════════════
 //  UI HELPERS
 // ══════════════════════════════════════════════════
-function moveBottomSlider(name) {
+function moveBottomSlider(name, instant = false) {
   const capsule = document.querySelector('.bottom-capsule');
   const activeBtn = document.querySelector(`.bottom-btn[data-view="${name}"]`);
   const slider = document.getElementById('bottom-slider');
   if (!capsule || !activeBtn || !slider) return;
   const capsuleLeft = capsule.getBoundingClientRect().left;
   const btnRect = activeBtn.getBoundingClientRect();
-  slider.style.width  = btnRect.width + 'px';
-  slider.style.transform = `translateX(${btnRect.left - capsuleLeft - 5}px)`;
+  if (instant) {
+    slider.style.transition = 'none';
+    slider.style.width  = btnRect.width + 'px';
+    slider.style.transform = `translateX(${btnRect.left - capsuleLeft - 5}px)`;
+    // Fuerza reflow, luego restaura la transición
+    slider.getBoundingClientRect();
+    slider.style.transition = '';
+  } else {
+    slider.style.width  = btnRect.width + 'px';
+    slider.style.transform = `translateX(${btnRect.left - capsuleLeft - 5}px)`;
+  }
 }
 
 function showView(name) {
