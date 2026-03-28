@@ -776,58 +776,74 @@ textarea.input { resize: vertical; min-height: 80px; }
   position: fixed;
   bottom: 0; left: 0; right: 0;
   height: var(--bot-h);
-  background: rgba(255,255,255,0.95);
-  backdrop-filter: blur(14px);
-  border-top: 1px solid var(--border);
   display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding-bottom: 14px;
   z-index: 100;
+  pointer-events: none;
 }
+#bottom-nav.hidden { display: none; }
+
+/* La cápsula pill */
+.bottom-capsule {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0;
+  background: rgba(245, 200, 80, 0.18);
+  backdrop-filter: blur(18px) saturate(1.6);
+  -webkit-backdrop-filter: blur(18px) saturate(1.6);
+  border: 1.5px solid rgba(194, 122, 0, 0.28);
+  border-radius: 50px;
+  padding: 5px;
+  box-shadow:
+    0 4px 24px rgba(194,122,0,0.14),
+    0 1px 0 rgba(255,255,255,0.6) inset;
+  pointer-events: all;
+}
+
+/* La bolita/pill deslizante */
+.bottom-slider {
+  position: absolute;
+  top: 5px;
+  left: 5px;
+  height: calc(100% - 10px);
+  border-radius: 40px;
+  background: linear-gradient(135deg, #f59e0b, #c27a00);
+  box-shadow: 0 2px 12px rgba(194,122,0,0.40);
+  transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1),
+              width 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+  pointer-events: none;
+  z-index: 0;
+}
+
 .bottom-btn {
-  flex: 1;
+  position: relative;
+  z-index: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 4px;
+  gap: 3px;
   background: none;
   border: none;
-  color: var(--text-dim);
+  color: rgba(100, 70, 0, 0.55);
   cursor: pointer;
   font-family: 'Exo 2', sans-serif;
+  padding: 8px 20px;
+  border-radius: 40px;
   transition: color 0.2s;
-  position: relative;
+  min-width: 72px;
 }
 .bottom-icon { display: flex; align-items: center; justify-content: center; line-height: 1; }
-.bottom-btn small { font-size: 0.68rem; }
-.bottom-btn.active { color: var(--gold); }
-.bottom-btn.active::before {
-  content: '';
-  position: absolute;
-  top: 0; left: 20%; right: 20%;
-  height: 2px;
-  background: var(--gold);
-  border-radius: 0 0 4px 4px;
+.bottom-btn small { font-size: 0.66rem; font-weight: 600; letter-spacing: 0.01em; }
+.bottom-btn.active {
+  color: #fff;
 }
 
+
 /* WHATSAPP FLOAT */
-.wa-float {
-  position: fixed;
-  bottom: calc(var(--bot-h) + 14px);
-  right: 16px;
-  width: 48px;
-  height: 48px;
-  background: #25d366;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 1.4rem;
-  text-decoration: none;
-  box-shadow: 0 4px 22px rgba(37,211,102,0.38);
-  z-index: 99;
-  transition: transform 0.2s;
-}
-.wa-float:hover { transform: scale(1.1); }
 
 /* ── MODAL ────────────────────────────────────── */
 .modal {

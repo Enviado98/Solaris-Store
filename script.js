@@ -91,16 +91,6 @@ const _histCache = { orders: null, movs: null };
 //  INIT
 // ══════════════════════════════════════════════════
 window.addEventListener('DOMContentLoaded', async () => {
-  // WhatsApp button
-  const wa = Object.assign(document.createElement('a'), {
-    href: `https://wa.me/${WA_NUMBER}`,
-    target: '_blank',
-    className: 'wa-float',
-    title: 'Soporte por WhatsApp',
-    textContent: '💬',
-  });
-  document.body.appendChild(wa);
-
   try {
     // Resolve session before showing any UI (prevents flash of login screen)
     const { data: { session } } = await db.auth.getSession();
@@ -146,6 +136,8 @@ async function handleLogin(user) {
   // Restaurar la vista donde el usuario estaba antes de minimizar/suspender
   const savedView = sessionStorage.getItem('solaris_view') || 'catalog';
   showView(savedView);
+  // Pequeño delay para asegurar que el DOM esté pintado antes de medir
+  requestAnimationFrame(() => moveBottomSlider(savedView));
   loadProducts();
 
   // Cargar profile y wallet en paralelo en segundo plano
@@ -679,12 +671,24 @@ async function addCredit(userId) {
 // ══════════════════════════════════════════════════
 //  UI HELPERS
 // ══════════════════════════════════════════════════
+function moveBottomSlider(name) {
+  const capsule = document.querySelector('.bottom-capsule');
+  const activeBtn = document.querySelector(`.bottom-btn[data-view="${name}"]`);
+  const slider = document.getElementById('bottom-slider');
+  if (!capsule || !activeBtn || !slider) return;
+  const capsuleLeft = capsule.getBoundingClientRect().left;
+  const btnRect = activeBtn.getBoundingClientRect();
+  slider.style.width  = btnRect.width + 'px';
+  slider.style.transform = `translateX(${btnRect.left - capsuleLeft - 5}px)`;
+}
+
 function showView(name) {
   document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
   document.getElementById(`view-${name}`)?.classList.add('active');
   document.querySelectorAll('.bottom-btn').forEach(b => b.classList.remove('active'));
   document.querySelector(`.bottom-btn[data-view="${name}"]`)?.classList.add('active');
   document.getElementById('navbar').style.display = '';
+  moveBottomSlider(name);
   // Guardar vista activa para restaurarla si la pestaña se suspende
   sessionStorage.setItem('solaris_view', name);
   if (name === 'cart') renderCart();
