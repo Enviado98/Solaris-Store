@@ -223,8 +223,8 @@ function handleLogout() {
   CACHE.clear('products');
   currentUser = currentProfile = currentWallet = null;
   cart = []; saveCart();
-  ['nav-balance','nav-logout-btn','nav-cart-btn','nav-admin-btn','nav-menu-btn','nav-account-btn'].forEach(id =>
-    document.getElementById(id).classList.add('hidden')
+  ['nav-balance','nav-logout-btn','nav-cart-btn','nav-admin-btn','nav-menu-btn','nav-account-btn','nav-balance-pill'].forEach(id =>
+    document.getElementById(id)?.classList.add('hidden')
   );
   closeNavPanel();
   document.getElementById('bottom-nav').classList.add('hidden');
@@ -821,8 +821,13 @@ function toast(msg, type = '') {
 }
 
 function syncBalanceUI() {
-  document.getElementById('balance-amount').textContent = price(currentWallet?.balance || 0);
-  // Actualizar estado del botón transferir
+  const bal = price(currentWallet?.balance || 0);
+  document.getElementById('balance-amount').textContent = bal;
+  // Actualizar píldora del navbar
+  const pill = document.getElementById('nav-balance-pill');
+  const pillAmt = document.getElementById('nav-pill-amount');
+  if (pill) pill.classList.remove('hidden');
+  if (pillAmt) pillAmt.textContent = '$' + bal;
   const transferBtn = document.getElementById('acct-transfer-trigger');
   if (transferBtn) {
     const hasBalance = parseFloat(currentWallet?.balance || 0) > 0;
@@ -996,7 +1001,7 @@ function initAccountListeners() {
     document.getElementById('acct-edit-btn')?.classList.remove('active');
   });
 
-  document.getElementById('acct-deposit-btn')?.addEventListener('click', () => {
+  function showDepositModal() {
     showModal('💰 Depositar saldo',
       `<div style="text-align:center;padding:8px 0 4px">
         <div style="width:56px;height:56px;background:linear-gradient(135deg,#16a34a,#22c55e);border-radius:16px;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;box-shadow:0 6px 20px rgba(22,163,74,0.4)">
@@ -1010,7 +1015,10 @@ function initAccountListeners() {
         <p style="font-size:0.75rem;color:var(--text-dim);margin-top:14px;opacity:0.7">El saldo se refleja en minutos ✓</p>
       </div>`
     );
-  });
+  }
+
+  document.getElementById('acct-deposit-btn')?.addEventListener('click', showDepositModal);
+  document.getElementById('nav-deposit-btn')?.addEventListener('click', showDepositModal);
 
   document.getElementById('tr-cancel-btn')?.addEventListener('click', () => {
     document.getElementById('acct-transfer-panel').classList.remove('open');
