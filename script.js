@@ -136,8 +136,19 @@ async function handleLogin(user) {
   // Restaurar la vista donde el usuario estaba antes de minimizar/suspender
   const savedView = sessionStorage.getItem('solaris_view') || 'catalog';
   showView(savedView);
-  // Doble rAF: el primero espera el commit del layout, el segundo espera el paint
-  requestAnimationFrame(() => requestAnimationFrame(() => moveBottomSlider(savedView, true)));
+  // El navbar acaba de salir de 'hidden' (display:none), por lo que
+  // getBoundingClientRect() puede devolver 0 en los primeros frames.
+  // Reintentamos hasta que el botón tenga dimensiones reales.
+  let attempts = 0;
+  function tryMoveSlider() {
+    const activeBtn = document.querySelector(`.bottom-btn[data-view="${savedView}"]`);
+    if (activeBtn && activeBtn.getBoundingClientRect().width > 0) {
+      moveBottomSlider(savedView, true);
+    } else if (attempts++ < 10) {
+      requestAnimationFrame(tryMoveSlider);
+    }
+  }
+  requestAnimationFrame(tryMoveSlider);
   loadProducts();
 
   // Cargar profile y wallet en paralelo en segundo plano
