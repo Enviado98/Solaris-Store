@@ -809,24 +809,19 @@ textarea.input { resize: vertical; min-height: 80px; }
   top: 5px;
   left: 5px;
   height: calc(100% - 10px);
+  width: calc((100% - 10px) / 3);
   border-radius: 40px;
   background: linear-gradient(135deg, #f59e0b, #c27a00);
   box-shadow: 0 2px 12px rgba(194,122,0,0.40);
   transition: left 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
   pointer-events: none;
   z-index: 0;
-  /* Ancho = un botón (min-width 72px + padding 40px = 112px, pero usamos 33.33%) */
-  width: calc(100% / 3);
-  left: calc(5px);
 }
-/* Botón 2 activo (carrito) */
-.bottom-btn:nth-child(2).active ~ * ,
-.bottom-capsule:has(.bottom-btn:nth-child(2).active) .bottom-slider {
-  left: calc(5px + 100% / 3);
+.bottom-capsule:has(.bottom-btn[data-view="cart"].active) .bottom-slider {
+  left: calc((100% - 10px) / 3 + 5px);
 }
-/* Botón 3 activo (cuenta) */
-.bottom-capsule:has(.bottom-btn:nth-child(3).active) .bottom-slider {
-  left: calc(5px + 100% / 3 * 2);
+.bottom-capsule:has(.bottom-btn[data-view="account"].active) .bottom-slider {
+  left: calc((100% - 10px) / 3 * 2 + 5px);
 }
 
 .bottom-btn {
