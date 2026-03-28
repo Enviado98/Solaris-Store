@@ -1206,7 +1206,11 @@ async function doSaveProfile() {
       const daysSince  = (Date.now() - lastChange.getTime()) / (1000 * 60 * 60 * 24);
       if (daysSince < 7) {
         const daysLeft = Math.ceil(7 - daysSince);
-        toast(`Puedes cambiar tu @usuario en ${daysLeft} día${daysLeft !== 1 ? 's' : ''}`, 'error');
+        const fb = document.getElementById('acct-username-feedback');
+        if (fb) {
+          fb.textContent = `⏳ Puedes cambiarlo 1 vez cada 7 días (faltan ${daysLeft} día${daysLeft !== 1 ? 's' : ''})`;
+          fb.className = 'acct-user-feedback error';
+        }
         return;
       }
     }
