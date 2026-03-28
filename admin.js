@@ -357,7 +357,7 @@ async function openOrdersModal(userId, userName) {
   // Load both in parallel via SECURITY DEFINER RPCs (bypass RLS)
   const [ordersRes, movsRes] = await Promise.allSettled([
     db.rpc('get_user_orders_admin', { p_user_id: userId }),
-    db.rpc('get_user_topups_admin', { p_user_id: userId }),
+    db.rpc('get_user_movements_admin', { p_user_id: userId }),
   ]);
 
   // Render compras
