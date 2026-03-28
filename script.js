@@ -399,9 +399,6 @@ function setupEvents() {
   });
   document.getElementById('nav-admin-btn').addEventListener('click', () => {
     closeNavPanel();
-    showView('admin');
-    loadAdminProducts();
-    loadAdminUsers();
   });
 
   // ── Close panel when clicking outside

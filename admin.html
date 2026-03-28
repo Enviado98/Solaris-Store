@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Solaris — Admin</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Exo+2:wght@400;500;600;700;800&display=swap"/>
+  <link rel="stylesheet" href="admin.css"/>
+</head>
+<body>
+
+<!-- ── Loader ──────────────────────────────────────── -->
+<div id="loader">
+  <div class="loader-ring"></div>
+</div>
+
+<!-- ── App ─────────────────────────────────────────── -->
+<div id="app" class="hidden">
+
+  <!-- Header -->
+  <header class="admin-header">
+    <a href="index.html" class="admin-header-logo">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+      </svg>
+      SOLARIS
+    </a>
+    <span class="admin-header-badge">ADMIN</span>
+    <div class="admin-header-spacer"></div>
+    <span class="admin-header-user" id="header-user-label"></span>
+    <a href="index.html" class="btn-back">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="15 18 9 12 15 6"/>
+      </svg>
+      Volver
+    </a>
+  </header>
+
+  <!-- Main -->
+  <main class="admin-main">
+
+    <!-- Page title -->
+    <div class="admin-page-title">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+      </svg>
+      Panel de Administración
+    </div>
+
+    <!-- Stat cards -->
+    <div class="admin-stats">
+      <div class="stat-card">
+        <div class="stat-card-label">USUARIOS</div>
+        <div class="stat-card-value" id="stat-users">—</div>
+        <div class="stat-card-sub">registrados</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-card-label">PRODUCTOS</div>
+        <div class="stat-card-value" id="stat-products">—</div>
+        <div class="stat-card-sub">activos</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-card-label">ÓRDENES</div>
+        <div class="stat-card-value" id="stat-orders">—</div>
+        <div class="stat-card-sub">completadas</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-card-label">BALANCE TOTAL</div>
+        <div class="stat-card-value" id="stat-balance">—</div>
+        <div class="stat-card-sub">en wallets</div>
+      </div>
+    </div>
+
+    <!-- Tabs -->
+    <div class="admin-tabs">
+      <button class="tab-btn active" data-tab="products">📦 Productos</button>
+      <button class="tab-btn" data-tab="users">👥 Usuarios</button>
+      <button class="tab-btn" data-tab="add">➕ Agregar</button>
+    </div>
+
+    <!-- Tab: Productos -->
+    <div id="tab-products" class="admin-tab active">
+      <div class="admin-filter-bar">
+        <input type="text" class="input-search" id="prod-search" placeholder="Buscar producto…"/>
+        <select class="input-search" id="prod-cat-filter">
+          <option value="">Todas las categorías</option>
+          <option value="Streaming">Streaming</option>
+          <option value="Musica">Música</option>
+          <option value="Gaming">Gaming</option>
+          <option value="Software">Software</option>
+          <option value="Internet">Internet</option>
+        </select>
+      </div>
+      <div class="admin-list" id="admin-products-list">
+        <div class="no-items">Cargando…</div>
+      </div>
+    </div>
+
+    <!-- Tab: Usuarios -->
+    <div id="tab-users" class="admin-tab">
+      <div class="admin-filter-bar">
+        <input type="text" class="input-search" id="user-search" placeholder="Buscar usuario o email…"/>
+      </div>
+      <div class="admin-list" id="admin-users-list">
+        <div class="no-items">Cargando…</div>
+      </div>
+    </div>
+
+    <!-- Tab: Agregar Producto -->
+    <div id="tab-add" class="admin-tab">
+      <div class="admin-form">
+        <div class="admin-form-title">Nuevo producto</div>
+        <div class="form-grid">
+          <input type="text"   class="input" id="ap-name"     placeholder="Nombre del producto"/>
+          <select              class="input" id="ap-category">
+            <option value="">— Categoría —</option>
+            <option value="Streaming">Streaming</option>
+            <option value="Musica">Música</option>
+            <option value="Gaming">Gaming</option>
+            <option value="Software">Software</option>
+            <option value="Internet">Internet</option>
+          </select>
+          <select              class="input" id="ap-service">
+            <option value="">— Servicio (opcional) —</option>
+            <option value="Netflix">Netflix</option>
+            <option value="HBO">HBO</option>
+            <option value="Disney">Disney+</option>
+            <option value="PrimeVideo">Prime Video</option>
+            <option value="Paramount">Paramount+</option>
+            <option value="Crunchyroll">Crunchyroll</option>
+            <option value="Vix">Vix</option>
+            <option value="Mubi">Mubi</option>
+            <option value="FoxOne">Fox One</option>
+            <option value="UniversalPlus">Universal+</option>
+            <option value="OleadaTV">Oleada TV</option>
+            <option value="IPTVSmarters">IPTV Smarters</option>
+            <option value="Spotify">Spotify</option>
+            <option value="YouTubePremium">YouTube Premium</option>
+            <option value="AmazonMusic">Amazon Music</option>
+            <option value="GamepassCore">Gamepass Core</option>
+            <option value="GamepassUlt">Gamepass Ultimate</option>
+            <option value="ChatGPT">ChatGPT</option>
+            <option value="Canva">Canva</option>
+            <option value="Office">Office 365</option>
+            <option value="Windows11">Windows 11</option>
+            <option value="Windows10">Windows 10</option>
+          </select>
+          <input type="number" class="input" id="ap-price"    placeholder="Precio (USD)" step="0.01" min="0"/>
+          <input type="number" class="input" id="ap-duration" placeholder="Duración (días)" value="30" min="1"/>
+        </div>
+        <textarea class="input form-full" id="ap-desc" placeholder="Descripción (opcional)"></textarea>
+        <textarea class="input form-full" id="ap-account" placeholder="Datos de acceso (opcional — ej: usuario:contraseña)" style="margin-top:10px"></textarea>
+        <div style="margin-top:14px;display:flex;gap:10px;align-items:center">
+          <button class="btn btn-primary" id="add-product-btn">Guardar producto</button>
+          <span class="status-msg" id="ap-msg" style="margin:0"></span>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<!-- ── Modal ───────────────────────────────────────── -->
+<div id="modal" class="hidden">
+  <div class="modal-box">
+    <button class="modal-close" id="modal-close">✕</button>
+    <div id="modal-content"></div>
+  </div>
+</div>
+
+<!-- ── Toast ──────────────────────────────────────── -->
+<div id="toast"></div>
+
+<!-- ── Scripts ────────────────────────────────────── -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="admin.js"></script>
+
+</body>
+</html>

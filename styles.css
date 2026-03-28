@@ -364,6 +364,12 @@ body::before {
   background: var(--border);
   margin: 4px 6px;
 }
+.nav-panel-admin {
+  color: #e53935;
+  font-weight: 700;
+  text-decoration: none;
+}
+.nav-panel-admin:hover { background: rgba(229,57,53,0.07); color: #c62828; }
 .nav-panel-logout {
   color: #e53935;
 }
