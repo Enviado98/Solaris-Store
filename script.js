@@ -780,13 +780,26 @@ function showView(name) {
   document.querySelector(`.bottom-btn[data-view="${name}"]`)?.classList.add('active');
   document.getElementById('navbar').style.display = '';
   moveBottomSlider(name);
-  // Guardar vista activa para restaurarla si la pestaña se suspende
   sessionStorage.setItem('solaris_view', name);
   if (name === 'cart') renderCart();
   if (name === 'catalog') {
     document.querySelector('.store-layout')?.classList.remove('hidden');
     document.getElementById('products-panel')?.classList.add('hidden');
     currentCat = 'all';
+  }
+  // Píldora: ocultar en Cuenta, mostrar en el resto
+  const pill = document.getElementById('nav-balance-pill');
+  if (pill && currentWallet) {
+    if (name === 'account') {
+      pill.classList.add('pill-hide');
+      setTimeout(() => {
+        pill.classList.add('hidden');
+        pill.classList.remove('pill-hide');
+      }, 220);
+    } else {
+      pill.classList.remove('hidden');
+      pill.classList.remove('pill-hide');
+    }
   }
 }
 

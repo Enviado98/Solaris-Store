@@ -218,6 +218,15 @@ body::before {
   to   { opacity: 1; transform: scale(1) translateX(0); }
 }
 
+@keyframes pillFadeOut {
+  from { opacity: 1; transform: scale(1) translateX(0); }
+  to   { opacity: 0; transform: scale(0.8) translateX(10px); }
+}
+
+.nav-balance-pill.pill-hide {
+  animation: pillFadeOut 0.2s cubic-bezier(0.4,0,1,1) forwards;
+}
+
 .nav-balance-pill > svg {
   color: var(--gold);
   flex-shrink: 0;
