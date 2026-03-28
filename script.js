@@ -1417,9 +1417,6 @@ function showProductsSkeleton() {
       <div class="skel skel-prod-name"></div>
       <div class="skel skel-prod-price"></div>
     </div>`).join('');
-  // Mostrar el panel de productos para que se vea el skeleton
-  document.querySelector('.store-layout')?.classList.add('hidden');
-  document.getElementById('products-panel')?.classList.remove('hidden');
 }
 
 // ── SWIPE ENTRE VISTAS ──────────────────────────
