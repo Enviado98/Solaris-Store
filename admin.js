@@ -354,18 +354,10 @@ async function openOrdersModal(userId, userName) {
     <div id="hist-movimientos" class="hist-panel hidden"><div class="no-items">Cargando…</div></div>
   `);
 
-  // Load both in parallel
+  // Load both in parallel via SECURITY DEFINER RPCs (bypass RLS)
   const [ordersRes, movsRes] = await Promise.allSettled([
-    db.from('orders')
-      .select('*, products(name, price)')
-      .eq('user_id', userId)
-      .order('created_at', { ascending: false })
-      .limit(30),
-    db.from('wallet_topups')
-      .select('*')
-      .eq('user_id', userId)
-      .order('created_at', { ascending: false })
-      .limit(30),
+    db.rpc('get_user_orders_admin', { p_user_id: userId }),
+    db.rpc('get_user_topups_admin', { p_user_id: userId }),
   ]);
 
   // Render compras
@@ -376,7 +368,7 @@ async function openOrdersModal(userId, userName) {
       <div class="hist-row">
         <div class="hist-row-icon hist-icon-buy">🛒</div>
         <div class="hist-row-info">
-          <div class="hist-row-name">${esc(o.products?.name || '—')}</div>
+          <div class="hist-row-name">${esc(o.product_name || '—')}</div>
           <div class="hist-row-date">${fmtDate(o.created_at)}</div>
         </div>
         <div class="hist-row-amt neg">-$${price(o.amount_paid)}</div>
