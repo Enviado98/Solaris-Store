@@ -996,6 +996,22 @@ function initAccountListeners() {
     document.getElementById('acct-edit-btn')?.classList.remove('active');
   });
 
+  document.getElementById('acct-deposit-btn')?.addEventListener('click', () => {
+    showModal('💰 Depositar saldo',
+      `<div style="text-align:center;padding:8px 0 4px">
+        <div style="width:56px;height:56px;background:linear-gradient(135deg,#16a34a,#22c55e);border-radius:16px;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;box-shadow:0 6px 20px rgba(22,163,74,0.4)">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+        </div>
+        <p style="font-size:0.9rem;color:var(--text-dim);line-height:1.5;margin-bottom:18px">Para agregar saldo a tu cuenta,<br>contacta a un administrador.</p>
+        <div style="background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:14px 16px;text-align:left;font-size:0.82rem;color:var(--text-dim);line-height:1.7">
+          <div>📱 <strong style="color:var(--text)">WhatsApp</strong> · Disponible 9am–9pm</div>
+          <div>📧 <strong style="color:var(--text)">Email</strong> · soporte@solaris.store</div>
+        </div>
+        <p style="font-size:0.75rem;color:var(--text-dim);margin-top:14px;opacity:0.7">El saldo se refleja en minutos ✓</p>
+      </div>`
+    );
+  });
+
   document.getElementById('tr-cancel-btn')?.addEventListener('click', () => {
     document.getElementById('acct-transfer-panel').classList.remove('open');
     document.getElementById('acct-transfer-trigger')?.classList.remove('active');
