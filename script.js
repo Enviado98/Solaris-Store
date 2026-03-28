@@ -390,29 +390,74 @@ function setupEvents() {
     })
   );
 
-  // ── Secciones completas (filtran por categoría genérica)
-  document.querySelectorAll('.cat-section').forEach(sec =>
-    sec.addEventListener('click', () => {
+  // ── Carrusel: CTA "Ver todos" por categoría
+  document.querySelectorAll('.cat-card-cta').forEach(btn =>
+    btn.addEventListener('click', e => {
+      e.stopPropagation();
       if (window._triggerLogoPulse) window._triggerLogoPulse();
       const catMap = {
-        'cat-streaming': 'Streaming',
-        'cat-musica':    'Musica',
-        'cat-gaming':    'Gaming',
-        'cat-software':  'Software',
-        'cat-internet':  'Internet',
+        'Streaming': { cat: 'Streaming', title: '📺 Streaming' },
+        'Musica':    { cat: 'Musica',    title: '🎵 Música' },
+        'Gaming':    { cat: 'Gaming',    title: '🎮 Gaming' },
+        'Software':  { cat: 'Software',  title: '💻 Software' },
+        'Internet':  { cat: 'Internet',  title: '🌐 Internet Gratis' },
       };
-      currentCat = catMap[sec.id] || 'all';
-      const titleMap = {
-        'cat-streaming': '📺 Streaming',
-        'cat-musica':    '🎵 Música',
-        'cat-gaming':    '🎮 Gaming',
-        'cat-software':  '💻 Software',
-        'cat-internet':  '🌐 Internet Gratis',
-      };
-      document.getElementById('products-panel-title').textContent = titleMap[sec.id] || '';
+      const key = btn.dataset.catTrigger;
+      const info = catMap[key] || { cat: key, title: key };
+      currentCat = info.cat;
+      document.getElementById('products-panel-title').textContent = info.title;
       openProductsPanel();
     })
   );
+
+  // ── Carrusel: dots + fondo ambiente animado
+  (function initCarousel() {
+    const carousel = document.getElementById('cat-carousel');
+    const dots = document.querySelectorAll('.cdot');
+    const cards = document.querySelectorAll('.cat-card');
+    const ambient = document.getElementById('store-ambient');
+    if (!carousel || !cards.length) return;
+
+    function updateAmbient(color) {
+      if (!ambient || !color) return;
+      const r = parseInt(color.slice(1,3), 16);
+      const g = parseInt(color.slice(3,5), 16);
+      const b = parseInt(color.slice(5,7), 16);
+      ambient.style.background = `radial-gradient(ellipse 90% 55% at 50% 0%, rgba(${r},${g},${b},0.09) 0%, transparent 70%)`;
+    }
+
+    function getActiveIndex() {
+      const center = carousel.scrollLeft + carousel.clientWidth / 2;
+      let closest = 0, minDist = Infinity;
+      cards.forEach((card, i) => {
+        const cardCenter = card.offsetLeft + card.offsetWidth / 2;
+        const dist = Math.abs(cardCenter - center);
+        if (dist < minDist) { minDist = dist; closest = i; }
+      });
+      return closest;
+    }
+
+    function syncDots(idx) {
+      dots.forEach((d, i) => d.classList.toggle('active', i === idx));
+      const card = cards[idx];
+      if (card) updateAmbient(card.dataset.color);
+    }
+
+    let scrollTimer;
+    carousel.addEventListener('scroll', () => {
+      clearTimeout(scrollTimer);
+      scrollTimer = setTimeout(() => syncDots(getActiveIndex()), 60);
+    }, { passive: true });
+
+    dots.forEach((dot, i) => {
+      dot.addEventListener('click', () => {
+        cards[i]?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+        syncDots(i);
+      });
+    });
+
+    syncDots(0);
+  })();
 
   document.getElementById('back-to-cats').addEventListener('click', () => {
     document.getElementById('products-panel').classList.add('hidden');
