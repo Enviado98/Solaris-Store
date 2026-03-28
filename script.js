@@ -133,25 +133,24 @@ async function handleLogin(user) {
   );
   document.getElementById('bottom-nav').classList.remove('hidden');
 
-  // Restaurar la vista donde el usuario estaba antes de minimizar/suspender
   const savedView = sessionStorage.getItem('solaris_view') || 'catalog';
   showView(savedView);
   loadProducts();
 
-  // Cargar profile y wallet en paralelo en segundo plano
-  [currentProfile, currentWallet] = await Promise.all([
-    fetchProfile(user.id),
-    fetchWallet(user.id),
-  ]);
+  // Cargar wallet y profile de forma independiente — cada uno actualiza la UI en cuanto llega
+  fetchWallet(user.id).then(wallet => {
+    currentWallet = wallet;
+    syncBalanceUI();
+    syncCartCount();
+    if (savedView === 'account' && currentProfile) renderAccountView();
+  });
 
-  // Actualizar UI con los datos ya cargados
-  if (currentProfile?.is_admin)
-    document.getElementById('nav-admin-btn').classList.remove('hidden');
-  syncBalanceUI();
-  syncCartCount();
-
-  // Si el usuario estaba en la vista de cuenta, renderizarla ahora que tenemos los datos
-  if (savedView === 'account') renderAccountView();
+  fetchProfile(user.id).then(profile => {
+    currentProfile = profile;
+    if (profile?.is_admin)
+      document.getElementById('nav-admin-btn').classList.remove('hidden');
+    if (savedView === 'account' && currentWallet) renderAccountView();
+  });
 }
 
 // ── Logout screen helpers
@@ -197,13 +196,29 @@ function handleLogout() {
   showAuthView();
 }
 
+async function fetchWithRetry(fn, retries = 3, delay = 1200) {
+  for (let i = 0; i < retries; i++) {
+    try {
+      const result = await fn();
+      if (result) return result;
+    } catch (e) { /* seguir reintentando */ }
+    if (i < retries - 1) await sleep(delay);
+  }
+  return null;
+}
 async function fetchProfile(uid) {
-  const { data } = await db.from('profiles').select('*').eq('id', uid).single();
-  return data;
+  return fetchWithRetry(async () => {
+    const { data, error } = await db.from('profiles').select('*').eq('id', uid).single();
+    if (error) throw error;
+    return data;
+  });
 }
 async function fetchWallet(uid) {
-  const { data } = await db.from('wallets').select('*').eq('user_id', uid).single();
-  return data;
+  return fetchWithRetry(async () => {
+    const { data, error } = await db.from('wallets').select('*').eq('user_id', uid).single();
+    if (error) throw error;
+    return data;
+  });
 }
 
 // ══════════════════════════════════════════════════
@@ -1300,11 +1315,13 @@ document.addEventListener('visibilitychange', () => {
   const saved = sessionStorage.getItem('solaris_view');
   if (saved) showView(saved);
 
-  if (saved === 'account') {
-    // Balance y perfil ya están en memoria — solo renderizar.
-    // El historial viene de caché: instantáneo, sin "Cargando...".
-    renderAccountView();
-  }
+  // Refrescar wallet silenciosamente — por si cambió en background
+  fetchWallet(currentUser.id).then(w => {
+    if (!w) return;
+    currentWallet = w;
+    syncBalanceUI();
+    if (saved === 'account') renderAccountView();
+  });
 });
 
 
