@@ -49,6 +49,41 @@ const CAT_EMOJI = {
   Streaming: '📺', Musica: '🎵', Gaming: '🎮', Software: '💻', Internet: '🌐',
 };
 
+// Iconify icon + color por servicio (para las product cards)
+const SVC_ICON = {
+  Netflix:       { icon: 'simple-icons:netflix',        color: '#E50914' },
+  HBO:           { icon: 'simple-icons:hbo',            color: '#9900FF' },
+  Disney:        { icon: 'simple-icons:disneyplus',     color: '#113CCF' },
+  PrimeVideo:    { icon: 'simple-icons:primevideo',     color: '#00A8E1' },
+  Paramount:     { icon: 'simple-icons:paramountplus',  color: '#0064FF' },
+  Crunchyroll:   { icon: 'simple-icons:crunchyroll',    color: '#F47521' },
+  Vix:           { icon: 'simple-icons:univision',      color: '#FF6B00' },
+  Mubi:          { icon: 'simple-icons:mubi',           color: '#222222' },
+  FoxOne:        { icon: 'simple-icons:fox',            color: '#FF6600' },
+  UniversalPlus: { icon: 'material-symbols:movie-outline-rounded', color: '#000000' },
+  OleadaTV:      { icon: 'material-symbols:live-tv-outline-rounded', color: '#E50914' },
+  IPTVSmarters:  { icon: 'material-symbols:play-circle-outline-rounded', color: '#7C3AED' },
+  Spotify:       { icon: 'simple-icons:spotify',        color: '#1DB954' },
+  YouTubePremium:{ icon: 'simple-icons:youtube',        color: '#FF0000' },
+  AmazonMusic:   { icon: 'simple-icons:amazonmusic',    color: '#00A8E1' },
+  GamepassCore:  { icon: 'simple-icons:xbox',           color: '#107C10' },
+  GamepassUlt:   { icon: 'simple-icons:xbox',           color: '#52B043' },
+  ChatGPT:       { icon: 'simple-icons:openai',         color: '#10A37F' },
+  Canva:         { icon: 'simple-icons:canva',          color: '#00C4CC' },
+  Office:        { icon: 'simple-icons:microsoftoffice',color: '#D83B01' },
+  Windows11:     { icon: 'simple-icons:windows11',      color: '#0078D4' },
+  Windows10:     { icon: 'simple-icons:windows',        color: '#0078D4' },
+};
+
+// Gradiente y color accent por categoría
+const CAT_STYLE = {
+  Streaming: { grad: 'linear-gradient(135deg,#E50914 0%,#ff6b35 100%)', accent: '#E50914', icon: 'material-symbols:tv-play-outline-rounded' },
+  Musica:    { grad: 'linear-gradient(135deg,#1DB954 0%,#00d4ff 100%)', accent: '#1DB954', icon: 'material-symbols:music-note-rounded' },
+  Gaming:    { grad: 'linear-gradient(135deg,#107C10 0%,#52B043 100%)', accent: '#107C10', icon: 'material-symbols:sports-esports-outline-rounded' },
+  Software:  { grad: 'linear-gradient(135deg,#0078D4 0%,#7C3AED 100%)', accent: '#0078D4', icon: 'material-symbols:deployed-code-outline' },
+  Internet:  { grad: 'linear-gradient(135deg,#00C4CC 0%,#0078D4 100%)', accent: '#00C4CC', icon: 'material-symbols:wifi-rounded' },
+};
+
 // Nombre bonito de categoría por svc key
 const SVC_CAT_LABEL = {
   Netflix:'Streaming', Vix:'Streaming', HBO:'Streaming', Disney:'Streaming',
@@ -506,6 +541,28 @@ async function loadProducts() {
 function openProductsPanel() {
   document.querySelector('.store-layout').classList.add('hidden');
   document.getElementById('products-panel').classList.remove('hidden');
+
+  // Pintar cabecera según categoría activa
+  const genericCats = ['Streaming', 'Musica', 'Gaming', 'Software', 'Internet'];
+  const cat = genericCats.includes(currentCat)
+    ? currentCat
+    : (Object.entries(SVC_CAT_LABEL).find(([k]) => k === currentCat)?.[1] || 'Streaming');
+  const style = CAT_STYLE[cat] || CAT_STYLE.Streaming;
+
+  const hero    = document.getElementById('panel-hero');
+  const iconEl  = document.getElementById('panel-hero-icon');
+  const divider = document.getElementById('panel-divider');
+  const subEl   = document.getElementById('panel-hero-sub');
+  const subs    = { Streaming:'Series, películas y más', Musica:'Audio sin límites', Gaming:'Juega sin parar', Software:'Apps y herramientas', Internet:'Navega sin gastar datos' };
+
+  if (hero)    hero.style.background = style.grad;
+  if (divider) divider.style.background = style.grad;
+  if (subEl)   subEl.textContent = subs[cat] || '';
+  if (iconEl) {
+    iconEl.setAttribute('data-icon', style.icon);
+    if (window.Iconify) Iconify.scan(iconEl.parentElement);
+  }
+
   renderProducts();
 }
 
@@ -525,22 +582,28 @@ function renderProducts() {
   }
 
   grid.innerHTML = list.map(p => {
-    const emoji = CAT_EMOJI[p.category] || '⭐';
+    const svcIcon = SVC_ICON[p.service];
+    const catStyle = CAT_STYLE[p.category] || CAT_STYLE.Streaming;
+    const iconHtml = svcIcon
+      ? `<span class="iconify product-svc-icon" data-icon="${svcIcon.icon}" style="color:${svcIcon.color}"></span>`
+      : `<span class="iconify product-svc-icon" data-icon="${catStyle.icon}" style="color:${catStyle.accent}"></span>`;
     return `
       <div class="product-card">
-        <div class="product-emoji">${emoji}</div>
-        <div class="product-cat">${p.category}</div>
+        <div class="product-icon-wrap" style="--cat-accent:${catStyle.accent}">
+          ${iconHtml}
+        </div>
         <div class="product-name">${esc(p.name)}</div>
         ${p.description ? `<div class="product-desc">${esc(p.description)}</div>` : ''}
         <div class="product-footer">
           <div class="product-price-block">
             <div class="product-price">$${price(p.price)}</div>
-            <div class="product-days">${p.duration_days} días</div>
+            <div class="product-days">${p.duration_days}d</div>
           </div>
           <button class="btn-add-cart" onclick="addToCart('${p.id}')">+ Carrito</button>
         </div>
       </div>`;
   }).join('');
+  if (window.Iconify) Iconify.scan(grid);
 }
 
 // ══════════════════════════════════════════════════
