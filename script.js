@@ -80,6 +80,13 @@ let currentUser    = null;
 let currentProfile = null;
 let currentWallet  = null;
 let allProducts    = [];
+
+// ── Local cache (stale-while-revalidate) ─────────
+const CACHE = {
+  get(key)      { try { return JSON.parse(localStorage.getItem('sl_' + key)); } catch { return null; } },
+  set(key, val) { try { localStorage.setItem('sl_' + key, JSON.stringify(val)); } catch {} },
+  clear(key)    { try { localStorage.removeItem('sl_' + key); } catch {} },
+};
 let currentCat     = 'all';
 let cart           = JSON.parse(localStorage.getItem('solaris_cart') || '[]');
 
@@ -135,21 +142,44 @@ async function handleLogin(user) {
 
   const savedView = sessionStorage.getItem('solaris_view') || 'catalog';
   showView(savedView);
-  loadProducts();
 
-  // Cargar wallet y profile de forma independiente — cada uno actualiza la UI en cuanto llega
+  // ── Mostrar caché inmediatamente (stale-while-revalidate) ──
+  const cachedWallet  = CACHE.get('wallet_'  + user.id);
+  const cachedProfile = CACHE.get('profile_' + user.id);
+  const cachedProducts = CACHE.get('products');
+
+  if (cachedWallet)  { currentWallet  = cachedWallet;  syncBalanceUI(); }
+  if (cachedProfile) { currentProfile = cachedProfile; }
+  if (cachedProducts && cachedProducts.length) {
+    allProducts = cachedProducts;
+    renderProducts();
+  }
+  if (savedView === 'account' && cachedWallet && cachedProfile) {
+    renderAccountView();
+  } else if (savedView === 'account') {
+    showAccountSkeleton();
+  }
+  if (cachedProfile?.is_admin)
+    document.getElementById('nav-admin-btn').classList.remove('hidden');
+
+  // ── Cargar datos frescos en paralelo ──
+  loadProducts(); // productos siempre frescos
+
   fetchWallet(user.id).then(wallet => {
+    if (!wallet) return;
     currentWallet = wallet;
+    CACHE.set('wallet_' + user.id, wallet);
     syncBalanceUI();
-    syncCartCount();
-    if (savedView === 'account' && currentProfile) renderAccountView();
+    if (savedView === 'account') renderAccountView();
   });
 
   fetchProfile(user.id).then(profile => {
+    if (!profile) return;
     currentProfile = profile;
+    CACHE.set('profile_' + user.id, profile);
     if (profile?.is_admin)
       document.getElementById('nav-admin-btn').classList.remove('hidden');
-    if (savedView === 'account' && currentWallet) renderAccountView();
+    if (savedView === 'account') renderAccountView();
   });
 }
 
@@ -186,6 +216,11 @@ function hideLogoutScreen() {
 }
 
 function handleLogout() {
+  if (currentUser) {
+    CACHE.clear('wallet_'  + currentUser.id);
+    CACHE.clear('profile_' + currentUser.id);
+  }
+  CACHE.clear('products');
   currentUser = currentProfile = currentWallet = null;
   cart = []; saveCart();
   ['nav-balance','nav-logout-btn','nav-cart-btn','nav-admin-btn','nav-menu-btn','nav-account-btn'].forEach(id =>
@@ -409,6 +444,9 @@ function setupEvents() {
 //  PRODUCTS
 // ══════════════════════════════════════════════════
 async function loadProducts() {
+  // Mostrar skeleton solo si no hay productos en memoria
+  if (!allProducts.length) showProductsSkeleton();
+
   const { data, error } = await db
     .from('products').select('*')
     .eq('is_active', true)
@@ -416,6 +454,7 @@ async function loadProducts() {
 
   if (error) { console.error(error); return; }
   allProducts = data || [];
+  CACHE.set('products', allProducts);
   renderProducts();
 }
 
@@ -1329,6 +1368,58 @@ function fmtDate(iso) {
   if (!iso) return '—';
   const d = new Date(iso);
   return d.toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' });
+}
+
+// ══════════════════════════════════════════════════
+//  SKELETON HELPERS
+// ══════════════════════════════════════════════════
+function _skelRow() {
+  return `<div class="skel-hist-row">
+    <div class="skel skel-hist-icon"></div>
+    <div class="skel-hist-body">
+      <div class="skel skel-hist-line1"></div>
+      <div class="skel skel-hist-line2"></div>
+    </div>
+    <div class="skel skel-hist-amt"></div>
+  </div>`;
+}
+
+function showAccountSkeleton() {
+  // Balance skeleton (dentro de la tarjeta dorada)
+  const balVal = document.getElementById('acct-balance-val');
+  if (balVal) balVal.innerHTML = '<span class="skel-balance-amount"></span>';
+
+  // Perfil skeleton
+  const profileCard = document.getElementById('acct-profile-card');
+  if (profileCard) {
+    profileCard.innerHTML = `
+      <div class="skel skel-avatar"></div>
+      <div class="acct-profile-info">
+        <div class="skel skel-username"></div>
+      </div>`;
+  }
+
+  // Historial skeleton
+  const skelRows = [_skelRow(), _skelRow(), _skelRow()].join('');
+  const compras = document.getElementById('acct-hist-compras');
+  const recargas = document.getElementById('acct-hist-recargas');
+  if (compras)  compras.innerHTML  = skelRows;
+  if (recargas) recargas.innerHTML = skelRows;
+}
+
+function showProductsSkeleton() {
+  const grid = document.getElementById('products-grid');
+  if (!grid) return;
+  grid.innerHTML = Array(6).fill(`
+    <div class="skel-product-card">
+      <div class="skel skel-prod-emoji"></div>
+      <div class="skel skel-prod-cat"></div>
+      <div class="skel skel-prod-name"></div>
+      <div class="skel skel-prod-price"></div>
+    </div>`).join('');
+  // Mostrar el panel de productos para que se vea el skeleton
+  document.querySelector('.store-layout')?.classList.add('hidden');
+  document.getElementById('products-panel')?.classList.remove('hidden');
 }
 
 // ── SWIPE ENTRE VISTAS ──────────────────────────
