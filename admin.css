@@ -476,6 +476,12 @@ textarea.input { resize: vertical; min-height: 70px; }
   border: 1px solid rgba(229,57,53,0.18);
 }
 .upill-delete:hover { background: rgba(229,57,53,0.14); }
+.upill-makeadmin {
+  background: rgba(255,193,7,0.08);
+  color: #b8860b;
+  border: 1px solid rgba(255,193,7,0.25);
+}
+.upill-makeadmin:hover { background: rgba(255,193,7,0.18); }
 
 /* ── History modal ───────────────────────── */
 .hist-balance-banner {

@@ -297,7 +297,11 @@ function renderUsers() {
         <button class="upill upill-delete"
           onclick="deleteUser('${u.id}', '${displayName}')">
           <span class="upill-icon">🗑️</span> Eliminar
-        </button>` : '<div></div><div></div>'}
+        </button>
+        <button class="upill upill-makeadmin"
+          onclick="makeAdmin('${u.id}', '${displayName}')">
+          <span class="upill-icon">👑</span> Hacer Admin
+        </button>` : '<div></div><div></div><div></div>'}
       </div>
     </div>`;
   }).join('');
@@ -516,6 +520,39 @@ async function confirmToggleBlock(userId, currentlyBlocked) {
   }
 
   toast(currentlyBlocked ? 'Usuario desbloqueado ✓' : 'Usuario bloqueado ✓');
+  loadAdminUsers();
+}
+
+// ══════════════════════════════════════════════
+//  HACER ADMIN
+// ══════════════════════════════════════════════
+function makeAdmin(userId, userName) {
+  showModal(
+    `👑 Hacer Admin — ${userName}`,
+    `<p style="color:var(--text-dim);font-size:0.87rem;margin-bottom:8px">
+      ¿Confirmas que deseas dar permisos de <strong>administrador</strong> a ${userName}?
+     </p>
+     <p style="color:var(--text-dim);font-size:0.82rem;margin-bottom:16px">
+      El usuario tendrá acceso completo al panel de administración.
+     </p>
+     <div class="modal-actions">
+       <button class="btn btn-neutral" onclick="closeModal()">Cancelar</button>
+       <button class="btn btn-primary" onclick="confirmMakeAdmin('${userId}')">Sí, hacer Admin</button>
+     </div>`
+  );
+}
+
+async function confirmMakeAdmin(userId) {
+  const { error } = await db.rpc('admin_make_admin', { p_user_id: userId });
+
+  closeModal();
+
+  if (error) {
+    toast('Error: ' + error.message, 'error');
+    return;
+  }
+
+  toast('Usuario promovido a Admin 👑');
   loadAdminUsers();
 }
 
