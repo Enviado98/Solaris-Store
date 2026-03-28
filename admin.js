@@ -242,7 +242,19 @@ function renderUsers() {
   const search = document.getElementById('user-search')?.value.toLowerCase() || '';
   const el = document.getElementById('admin-users-list');
 
-  let list = _allUsers;
+  let list = [..._allUsers];
+
+  // Sort: admins first, then by balance desc, then alphabetically for ties/zero
+  list.sort((a, b) => {
+    if (a.is_admin !== b.is_admin) return a.is_admin ? -1 : 1;
+    const balA = parseFloat(a.balance || 0);
+    const balB = parseFloat(b.balance || 0);
+    if (balA !== balB) return balB - balA;
+    const nameA = (a.username || a.email || '').toLowerCase();
+    const nameB = (b.username || b.email || '').toLowerCase();
+    return nameA.localeCompare(nameB);
+  });
+
   if (search) list = list.filter(u =>
     (u.username || '').toLowerCase().includes(search) ||
     (u.email    || '').toLowerCase().includes(search)
@@ -325,31 +337,84 @@ async function addCredit(userId) {
 }
 
 async function openOrdersModal(userId, userName) {
-  showModal(`Órdenes de ${userName}`, '<div class="no-items">Cargando…</div>');
+  // Get balance from cached user list
+  const u = _allUsers.find(x => x.id === userId);
+  const currentBalance = u ? parseFloat(u.balance || 0).toFixed(2) : '—';
 
-  const { data } = await db
-    .from('orders')
-    .select('*, products(name, price)')
-    .eq('user_id', userId)
-    .order('created_at', { ascending: false })
-    .limit(20);
+  showModal(`Historial — ${userName}`, `
+    <div class="hist-balance-banner">
+      <span class="hist-balance-label">Saldo actual</span>
+      <span class="hist-balance-val">$${currentBalance}</span>
+    </div>
+    <div class="hist-tabs">
+      <button class="hist-tab active" onclick="switchHistTab('compras')">🛒 Compras</button>
+      <button class="hist-tab" onclick="switchHistTab('movimientos')">💸 Movimientos</button>
+    </div>
+    <div id="hist-compras" class="hist-panel active"><div class="no-items">Cargando…</div></div>
+    <div id="hist-movimientos" class="hist-panel hidden"><div class="no-items">Cargando…</div></div>
+  `);
 
-  const content = document.getElementById('modal-content');
-  if (!data?.length) {
-    content.innerHTML = `<h3>Órdenes de ${userName}</h3><div class="no-items">Sin órdenes aún</div>`;
-    return;
+  // Load both in parallel
+  const [ordersRes, movsRes] = await Promise.allSettled([
+    db.from('orders')
+      .select('*, products(name, price)')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false })
+      .limit(30),
+    db.from('wallet_topups')
+      .select('*')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false })
+      .limit(30),
+  ]);
+
+  // Render compras
+  const comprasEl = document.getElementById('hist-compras');
+  if (comprasEl) {
+    const orders = ordersRes.status === 'fulfilled' ? (ordersRes.value.data || []) : [];
+    comprasEl.innerHTML = orders.length ? orders.map(o => `
+      <div class="hist-row">
+        <div class="hist-row-icon hist-icon-buy">🛒</div>
+        <div class="hist-row-info">
+          <div class="hist-row-name">${esc(o.products?.name || '—')}</div>
+          <div class="hist-row-date">${fmtDate(o.created_at)}</div>
+        </div>
+        <div class="hist-row-amt neg">-$${price(o.amount_paid)}</div>
+      </div>`).join('')
+    : '<div class="no-items">Sin compras aún</div>';
   }
 
-  const rows = data.map(o => `
-    <div class="admin-item" style="margin-bottom:8px">
-      <div class="admin-item-info">
-        <div class="admin-item-name">${esc(o.products?.name || '—')}</div>
-        <div class="admin-item-meta">${fmtDate(o.created_at)} · $${price(o.amount_paid)}</div>
-      </div>
-      <span style="font-size:0.78rem;color:${o.status==='completed'?'var(--green)':'var(--text-dim)'}">${o.status}</span>
-    </div>`).join('');
+  // Render movimientos
+  const movsEl = document.getElementById('hist-movimientos');
+  if (movsEl) {
+    const movs = movsRes.status === 'fulfilled' ? (movsRes.value.data || []) : [];
+    movsEl.innerHTML = movs.length ? movs.map(m => {
+      const amt  = parseFloat(m.amount || 0);
+      const isOut = m.type === 'transfer_out';
+      const sign  = isOut ? '-' : '+';
+      const cls   = isOut ? 'neg' : 'pos';
+      const icon  = m.type === 'transfer_in' ? '⬇️' : m.type === 'transfer_out' ? '⬆️' : '💳';
+      const nota  = m.note || (m.type === 'transfer_in' ? 'Recibido' : m.type === 'transfer_out' ? 'Enviado' : 'Recarga');
+      return `
+      <div class="hist-row">
+        <div class="hist-row-icon">${icon}</div>
+        <div class="hist-row-info">
+          <div class="hist-row-name">${esc(nota)}</div>
+          <div class="hist-row-date">${fmtDate(m.created_at)}</div>
+        </div>
+        <div class="hist-row-amt ${cls}">${sign}$${Math.abs(amt).toFixed(2)}</div>
+      </div>`;
+    }).join('')
+    : '<div class="no-items">Sin movimientos</div>';
+  }
+}
 
-  content.innerHTML = `<h3>Órdenes de ${userName}</h3>${rows}`;
+function switchHistTab(tab) {
+  document.querySelectorAll('.hist-tab').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.hist-panel').forEach(p => { p.classList.add('hidden'); p.classList.remove('active'); });
+  document.querySelector(`.hist-tab[onclick="switchHistTab('${tab}')"]`)?.classList.add('active');
+  const panel = document.getElementById('hist-' + tab);
+  if (panel) { panel.classList.remove('hidden'); panel.classList.add('active'); }
 }
 
 // ══════════════════════════════════════════════
