@@ -255,7 +255,7 @@ function renderUsers() {
 
   el.innerHTML = list.map(u => {
     const displayName = u.username ? '@' + esc(u.username) : esc(u.email || '—');
-    const isBlocked   = u.is_blocked;
+    const isBlocked   = u.is_blocked === true;
     const isAdmin     = u.is_admin;
     return `
     <div class="admin-item ${isBlocked ? 'admin-item-blocked' : ''}">
