@@ -106,16 +106,32 @@ async function loadStats() {
 let _allProducts = [];
 
 async function loadAdminProducts() {
-  const { data } = await db
-    .from('products').select('*')
-    .order('created_at', { ascending: false });
+  const { data, error } = await db
+    .from('accounts').select('*')
+    .order('expires_at', { ascending: true });
 
-  _allProducts = data || [];
+  if (error) {
+    // fallback a products si accounts no existe aún
+    const { data: fallback } = await db.from('products').select('*').order('created_at', { ascending: false });
+    _allProducts = (fallback || []).map(p => ({ ...p, base_price: p.price, _legacy: true }));
+  } else {
+    _allProducts = data || [];
+  }
   renderProducts();
 }
 
+function daysRemaining(expiresAt) {
+  if (!expiresAt) return 0;
+  return Math.max(0, Math.ceil((new Date(expiresAt) - Date.now()) / 86400000));
+}
+function calcPrice(basePrice, expiresAt) {
+  const days = daysRemaining(expiresAt);
+  if (days <= 0) return 0;
+  return Math.round((days / 30) * parseFloat(basePrice) * 100) / 100;
+}
+
 function renderProducts() {
-  const search   = document.getElementById('prod-search')?.value.toLowerCase() || '';
+  const search    = document.getElementById('prod-search')?.value.toLowerCase() || '';
   const catFilter = document.getElementById('prod-cat-filter')?.value || '';
   const el = document.getElementById('admin-products-list');
 
@@ -131,51 +147,63 @@ function renderProducts() {
     return;
   }
 
-  el.innerHTML = list.map(p => `
+  el.innerHTML = list.map(p => {
+    const days     = p._legacy ? (p.duration_days || 30) : daysRemaining(p.expires_at);
+    const dynPrice = p._legacy ? parseFloat(p.price) : calcPrice(p.base_price, p.expires_at);
+    const pct      = p._legacy ? 100 : Math.min(100, Math.round((days / 30) * 100));
+    const barColor = pct > 60 ? '#22c55e' : pct > 30 ? '#f59e0b' : '#ef4444';
+    const expiryStr = p._legacy ? `${days}d` : `${days} días restantes`;
+    return `
     <div class="admin-item">
       <div class="admin-item-info">
         <div class="admin-item-name">
           ${CAT_EMOJI[p.category] || '⭐'} ${esc(p.name)}
-          <span style="color:var(--gold);margin-left:6px">$${price(p.price)}</span>
+          <span style="color:${barColor};margin-left:6px">$${price(dynPrice)}</span>
+          ${!p._legacy ? `<span style="color:var(--text-dim);font-size:0.75rem;margin-left:4px">(base $${price(p.base_price)}/30d)</span>` : ''}
         </div>
         <div class="admin-item-meta">
-          ${esc(p.category)} · ${p.duration_days}d · ${p.is_active ? '✅ Activo' : '❌ Inactivo'}
+          ${esc(p.category)} · ${expiryStr} · ${p.is_active ? '✅ Activo' : '❌ Inactivo'}
           ${p.service ? ' · ' + esc(p.service) : ''}
+        </div>
+        <div style="margin-top:5px;height:4px;background:#eee;border-radius:2px;overflow:hidden">
+          <div style="height:100%;width:${pct}%;background:${barColor};border-radius:2px"></div>
         </div>
       </div>
       <div class="admin-item-actions">
-        <button class="btn-toggle" onclick="toggleProduct('${p.id}', ${p.is_active})">
+        <button class="btn-toggle" onclick="toggleProduct('${p.id}', ${p.is_active}, ${!!p._legacy})">
           ${p.is_active ? 'Desactivar' : 'Activar'}
         </button>
-        <button class="btn btn-danger" onclick="deleteProduct('${p.id}', '${esc(p.name)}')">
+        <button class="btn btn-danger" onclick="deleteProduct('${p.id}', '${esc(p.name)}', ${!!p._legacy})">
           Eliminar
         </button>
       </div>
-    </div>`
-  ).join('');
+    </div>`;
+  }).join('');
 }
 
-async function toggleProduct(id, active) {
-  await db.from('products').update({ is_active: !active }).eq('id', id);
+async function toggleProduct(id, active, legacy = false) {
+  const table = legacy ? 'products' : 'accounts';
+  await db.from(table).update({ is_active: !active }).eq('id', id);
   await loadAdminProducts();
   loadStats();
 }
 
-async function deleteProduct(id, name) {
+async function deleteProduct(id, name, legacy = false) {
   showModal(`Eliminar "${name}"`,
-    `<p style="color:var(--text-dim);font-size:0.87rem;margin-bottom:16px">¿Confirmas que deseas eliminar este producto? Esta acción no se puede deshacer.</p>
+    `<p style="color:var(--text-dim);font-size:0.87rem;margin-bottom:16px">¿Confirmas que deseas eliminar esta cuenta? Esta acción no se puede deshacer.</p>
      <div class="modal-actions">
        <button class="btn btn-neutral" onclick="closeModal()">Cancelar</button>
-       <button class="btn btn-danger" onclick="confirmDelete('${id}')">Sí, eliminar</button>
+       <button class="btn btn-danger" onclick="confirmDelete('${id}', ${legacy})">Sí, eliminar</button>
      </div>`
   );
 }
 
-async function confirmDelete(id) {
-  const { error } = await db.from('products').delete().eq('id', id);
+async function confirmDelete(id, legacy = false) {
+  const table = legacy ? 'products' : 'accounts';
+  const { error } = await db.from(table).delete().eq('id', id);
   closeModal();
   if (error) { toast('Error al eliminar', 'error'); return; }
-  toast('Producto eliminado ✓');
+  toast('Cuenta eliminada ✓');
   loadAdminProducts();
   loadStats();
 }
@@ -186,19 +214,23 @@ async function addProduct() {
   const service  = val('ap-service');
   const desc     = val('ap-desc');
   const prc      = parseFloat(document.getElementById('ap-price').value);
-  const days     = parseInt(document.getElementById('ap-duration').value) || 30;
+  const expires  = document.getElementById('ap-expires').value;
   const account  = val('ap-account');
 
   if (!name || !category || !prc)
     return setMsg('ap-msg', 'Nombre, categoría y precio son requeridos', 'error');
+  if (!expires)
+    return setMsg('ap-msg', 'La fecha de expiración es requerida', 'error');
 
   const btn = document.getElementById('add-product-btn');
   btn.disabled = true; btn.textContent = 'Guardando…';
 
-  const { error } = await db.from('products').insert({
+  const { error } = await db.from('accounts').insert({
     name, category, service: service || null,
-    description: desc || null, price: prc,
-    duration_days: days, account_data: account || null,
+    description: desc || null,
+    base_price: prc,
+    expires_at: new Date(expires).toISOString(),
+    account_data: account || null,
     is_active: true,
   });
 
@@ -210,7 +242,7 @@ async function addProduct() {
   ['ap-name','ap-desc','ap-account','ap-price'].forEach(id =>
     document.getElementById(id).value = ''
   );
-  document.getElementById('ap-duration').value = '30';
+  document.getElementById('ap-expires').value  = '';
   document.getElementById('ap-category').value = '';
   document.getElementById('ap-service').value  = '';
   loadAdminProducts();
