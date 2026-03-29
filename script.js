@@ -272,6 +272,8 @@ function handleLogout() {
   CACHE.clear('products');
   currentUser = currentProfile = currentWallet = null;
   cart = []; saveCart();
+  if (_histPollInterval) { clearInterval(_histPollInterval); _histPollInterval = null; }
+  _pendingNotif = null;
   ['nav-balance','nav-logout-btn','nav-cart-btn','nav-admin-btn','nav-menu-btn','nav-account-btn','nav-balance-pill'].forEach(id =>
     document.getElementById(id)?.classList.add('hidden')
   );
@@ -847,7 +849,15 @@ function showView(name) {
   moveBottomSlider(name);
   sessionStorage.setItem('solaris_view', name);
   if (name === 'cart') renderCart();
-  if (name === 'account') initTicker();
+  if (name === 'account') {
+    initTicker();
+    // Disparar animación pendiente de transfer/recarga si la hay
+    if (_pendingNotif) {
+      const fn = _pendingNotif;
+      _pendingNotif = null;
+      fn();
+    }
+  }
   if (name === 'catalog') {
     document.querySelector('.store-layout')?.classList.remove('hidden');
     document.getElementById('products-panel')?.classList.add('hidden');
@@ -1609,8 +1619,6 @@ async function loadAccountHistory() {
   if (!currentUser) return;
 
   // Si ya hay caché, renderizar al instante — sin tocar la red.
-  // Esto cubre el caso de minimizar/restaurar: el usuario ve sus datos
-  // inmediatamente, igual que una app nativa.
   if (_histCache.orders !== null && _histCache.movs !== null) {
     _renderHistory();
     return;
@@ -1639,48 +1647,90 @@ async function loadAccountHistory() {
   }
 
   if (movsResult.status === 'fulfilled' && !movsResult.value.error) {
-    const prevMovs  = _histCache.movs;
-    const newMovs   = movsResult.value.data || [];
+    const newMovs = movsResult.value.data || [];
     _histCache.movs = newMovs;
-
-    // Si había caché anterior, detectar movimiento nuevo y notificar en tarjeta
-    if (prevMovs !== null && newMovs.length > 0) {
-      const latest = newMovs[0];
-      const isNew  = !prevMovs.some(m => m.id === latest.id);
-      if (isNew && latest.type === 'transfer_in') {
-        const pendingBalance = latest.balance ?? null;
-        showView('account');
-        requestAnimationFrame(() => {
-          requestAnimationFrame(() => {
-            showCardNotif('in', latest.amount, `Recibido de @${latest.note || 'usuario'}`, () => {
-              if (pendingBalance !== null && currentWallet) {
-                currentWallet.balance = pendingBalance;
-              }
-              syncBalanceUI();
-            });
-          });
-        });
-      } else if (isNew && latest.type === 'topup') {
-        const pendingBalance = latest.balance ?? null;
-        showView('account');
-        requestAnimationFrame(() => {
-          requestAnimationFrame(() => {
-            showCardNotif('in', latest.amount, 'Recarga acreditada', () => {
-              if (pendingBalance !== null && currentWallet) {
-                currentWallet.balance = pendingBalance;
-              }
-              syncBalanceUI();
-            });
-          });
-        });
-      }
-    }
+    _checkNewMovement(newMovs);
   } else {
     _histCache.movs = [];
   }
 
   _renderHistory();
+
+  // Arrancar polling cada 8s para detectar transfers entrantes en tiempo real
+  if (!_histPollInterval) {
+    _histPollInterval = setInterval(_pollMovements, 8000);
+  }
 }
+
+let _histPollInterval = null;
+
+// Clave en localStorage para el último movimiento visto por este usuario
+function _lastSeenKey() { return `solaris_last_mov_${currentUser?.id}`; }
+
+async function _pollMovements() {
+  if (!currentUser) return;
+  const { data, error } = await db.from('wallet_topups')
+    .select('*')
+    .eq('user_id', currentUser.id)
+    .order('created_at', { ascending: false })
+    .limit(5);
+  if (error || !data?.length) return;
+  _histCache.movs = data;
+  _checkNewMovement(data);
+  _renderHistory();
+}
+
+function _checkNewMovement(movs) {
+  if (!movs?.length) return;
+  const latest    = movs[0];
+  const lastKey   = _lastSeenKey();
+  const lastSeen  = localStorage.getItem(lastKey) || '';
+
+  // Ya se mostró esta animación antes
+  if (latest.id === lastSeen) return;
+
+  // Marcar como visto ANTES de animar para evitar dobles
+  localStorage.setItem(lastKey, latest.id);
+
+  // Solo animar transfers entrantes y recargas — no las salientes
+  if (latest.type !== 'transfer_in' && latest.type !== 'topup') return;
+
+  // Si el movimiento tiene más de 5 minutos, no animar (ya es viejo)
+  const age = Date.now() - new Date(latest.created_at).getTime();
+  if (age > 5 * 60 * 1000) return;
+
+  const pendingBalance = latest.balance ?? null;
+  const label = latest.type === 'transfer_in'
+    ? `Recibido de @${latest.note || 'usuario'}`
+    : 'Recarga acreditada';
+
+  // Animar en la vista actual si es account, o al entrar a account
+  function _triggerNotif() {
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        showCardNotif('in', latest.amount, label, () => {
+          if (pendingBalance !== null && currentWallet) {
+            currentWallet.balance = pendingBalance;
+          }
+          syncBalanceUI();
+        });
+      });
+    });
+  }
+
+  const currentView = sessionStorage.getItem('solaris_view');
+  if (currentView === 'account') {
+    _triggerNotif();
+  } else {
+    // Mostrar cuando el usuario entre a la vista account
+    _pendingNotif = _triggerNotif;
+  }
+}
+
+// Notif pendiente para disparar al entrar a account
+let _pendingNotif = null;
+
+
 
 // Llamar esto después de una compra para que el historial se refresque
 function invalidateHistoryCache() {
