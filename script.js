@@ -165,7 +165,7 @@ window.addEventListener('DOMContentLoaded', async () => {
 
     // Now show app with the correct view already determined
     if (session) await handleLogin(session.user);
-    else showAuthView();
+    else showGuestCatalog();
     document.getElementById('app').classList.remove('hidden');
 
     db.auth.onAuthStateChange(async (event, session) => {
@@ -175,11 +175,11 @@ window.addEventListener('DOMContentLoaded', async () => {
 
     setupEvents();
   } catch (err) {
-    // Si algo falla, ocultar loader y mostrar login de todas formas
+    // Si algo falla, ocultar loader y mostrar catalogo de todas formas
     console.error('Boot error:', err);
     document.getElementById('loader').style.display = 'none';
     document.getElementById('app').classList.remove('hidden');
-    showAuthView();
+    showGuestCatalog();
     setupEvents();
   }
 });
@@ -189,6 +189,10 @@ window.addEventListener('DOMContentLoaded', async () => {
 // ══════════════════════════════════════════════════
 async function handleLogin(user) {
   currentUser = user;
+
+  // Hide guest section, show user items
+  document.getElementById('nav-guest-section')?.classList.add('hidden');
+  document.getElementById('nav-sep-auth')?.classList.remove('hidden');
 
   ['nav-balance', 'nav-logout-btn', 'nav-cart-btn', 'nav-menu-btn', 'nav-account-btn'].forEach(id =>
     document.getElementById(id).classList.remove('hidden')
@@ -468,12 +472,13 @@ function handleLogout() {
   if (_histPollInterval) { clearInterval(_histPollInterval); _histPollInterval = null; }
   _pendingNotif = null;
   try { localStorage.removeItem(_notifStateKey()); } catch {}
-  ['nav-balance','nav-logout-btn','nav-cart-btn','nav-admin-btn','nav-menu-btn','nav-account-btn','nav-balance-pill'].forEach(id =>
+  ['nav-balance','nav-logout-btn','nav-cart-btn','nav-admin-btn','nav-account-btn','nav-balance-pill'].forEach(id =>
     document.getElementById(id)?.classList.add('hidden')
   );
+  // nav-menu-btn siempre visible para invitados
   closeNavPanel();
   document.getElementById('bottom-nav').classList.add('hidden');
-  showAuthView();
+  showGuestCatalog();
 }
 
 async function fetchWithRetry(fn, retries = 3, delay = 1200) {
@@ -508,11 +513,27 @@ async function fetchWallet(uid) {
 function openNavPanel() {
   document.getElementById('nav-panel').classList.add('open');
   document.getElementById('nav-menu-btn').classList.add('open');
+  // Crear backdrop si no existe
+  if (!document.getElementById('nav-panel-backdrop')) {
+    const bd = document.createElement('div');
+    bd.id = 'nav-panel-backdrop';
+    bd.className = 'nav-panel-backdrop';
+    bd.addEventListener('click', closeNavPanel);
+    document.body.appendChild(bd);
+  }
+  requestAnimationFrame(() => {
+    document.getElementById('nav-panel-backdrop')?.classList.add('visible');
+  });
 }
 function closeNavPanel() {
   document.getElementById('nav-panel').classList.remove('open');
   const btn = document.getElementById('nav-menu-btn');
   if (btn) btn.classList.remove('open');
+  const bd = document.getElementById('nav-panel-backdrop');
+  if (bd) {
+    bd.classList.remove('visible');
+    setTimeout(() => bd.remove(), 320);
+  }
 }
 function toggleNavPanel() {
   const panel = document.getElementById('nav-panel');
@@ -577,22 +598,90 @@ function setupEvents() {
     if (error) setMsg('auth-msg', 'Error al conectar con Google', 'error');
   });
 
-  // ── Bottom nav
+  // ── Bottom nav (funciona para guests también)
   document.querySelectorAll('.bottom-btn[data-view]').forEach(btn =>
-    btn.addEventListener('click', () => showView(btn.dataset.view))
+    btn.addEventListener('click', () => {
+      const view = btn.dataset.view;
+      if (!currentUser && (view === 'cart' || view === 'account')) {
+        openLoginOverlay('login');
+        return;
+      }
+      showView(view);
+    })
   );
 
-  // ── Account button (shows info)
+  // ── Account button (shows info / login for guests)
   document.getElementById('account-btn').addEventListener('click', () => {
-    if (!currentUser) return;
+    if (!currentUser) { openLoginOverlay('login'); return; }
     showView('account');
     renderAccountView();
   });
 
-  // ── Hamburger menu
+  // ── Hamburger / dots menu (siempre visible)
   document.getElementById('nav-menu-btn').addEventListener('click', (e) => {
     e.stopPropagation();
     toggleNavPanel();
+  });
+
+  // ── Guest: botón "Iniciar Sesión" en panel
+  document.getElementById('nav-login-btn')?.addEventListener('click', () => {
+    openLoginOverlay('login');
+  });
+
+  // ── Guest: link "Regístrate" en panel
+  document.getElementById('nav-signup-link')?.addEventListener('click', () => {
+    openLoginOverlay('register');
+  });
+
+  // ── Login overlay: cerrar con X
+  document.getElementById('login-sheet-close')?.addEventListener('click', closeLoginOverlay);
+
+  // ── Login overlay: cerrar al tocar el fondo oscuro
+  document.getElementById('login-overlay-bg')?.addEventListener('click', closeLoginOverlay);
+
+  // ── Sheet: cambiar a registro
+  document.getElementById('sheet-to-register')?.addEventListener('click', () => showSheetTab('register'));
+  document.getElementById('sheet-to-login')?.addEventListener('click', () => showSheetTab('login'));
+
+  // ── Sheet: Google
+  document.getElementById('sheet-google-btn')?.addEventListener('click', async () => {
+    const { error } = await db.auth.signInWithOAuth({
+      provider: 'google',
+      options: { redirectTo: window.location.origin + '/' }
+    });
+    if (error) {
+      const msg = document.getElementById('sheet-login-msg');
+      if (msg) { msg.textContent = 'Error al conectar con Google'; msg.className = 'auth-msg error'; }
+    }
+  });
+
+  // ── Sheet: Login con email
+  document.getElementById('sheet-login-btn')?.addEventListener('click', async () => {
+    const email = document.getElementById('sheet-login-email')?.value?.trim();
+    const pass  = document.getElementById('sheet-login-password')?.value;
+    const msg   = document.getElementById('sheet-login-msg');
+    if (!email || !pass) { msg.textContent = 'Completa todos los campos'; msg.className = 'auth-msg error'; return; }
+    const btn = document.getElementById('sheet-login-btn');
+    btn.textContent = 'Entrando...'; btn.disabled = true;
+    const { error } = await db.auth.signInWithPassword({ email, password: pass });
+    btn.textContent = 'Entrar'; btn.disabled = false;
+    if (error) { msg.textContent = friendlyError(error.message); msg.className = 'auth-msg error'; }
+    else closeLoginOverlay();
+  });
+
+  // ── Sheet: Registro con email
+  document.getElementById('sheet-register-btn')?.addEventListener('click', async () => {
+    const email = document.getElementById('sheet-reg-email')?.value?.trim();
+    const pass  = document.getElementById('sheet-reg-password')?.value;
+    const msg   = document.getElementById('sheet-register-msg');
+    if (!email || !pass) { msg.textContent = 'Completa todos los campos'; msg.className = 'auth-msg error'; return; }
+    if (pass.length < 6) { msg.textContent = 'Mínimo 6 caracteres en contraseña'; msg.className = 'auth-msg error'; return; }
+    const btn = document.getElementById('sheet-register-btn');
+    btn.textContent = 'Creando...'; btn.disabled = true;
+    const { error } = await db.auth.signUp({ email, password: pass });
+    btn.textContent = 'Crear cuenta'; btn.disabled = false;
+    if (error) { msg.textContent = friendlyError(error.message); msg.className = 'auth-msg error'; }
+    else closeLoginOverlay();
   });
 
   // ── Nav panel: Mi Cuenta
@@ -611,14 +700,7 @@ function setupEvents() {
     closeNavPanel();
   });
 
-  // ── Close panel when clicking outside
-  document.addEventListener('click', (e) => {
-    const panel = document.getElementById('nav-panel');
-    const menuBtn = document.getElementById('nav-menu-btn');
-    if (panel && menuBtn && !panel.contains(e.target) && !menuBtn.contains(e.target)) {
-      closeNavPanel();
-    }
-  });
+  // Panel se cierra via backdrop (ver openNavPanel)
 
   // ── Chips de servicio (filtran por svc key)
   document.querySelectorAll('.svc-chip').forEach(chip =>
@@ -820,7 +902,9 @@ function renderProducts() {
             <div class="product-price">$${price(dynPrice)}</div>
             ${p.base_price ? `<div class="product-days">Base $${price(p.base_price)}/30d</div>` : `<div class="product-days">${days}d</div>`}
           </div>
-          <button class="btn-add-cart" onclick="addToCart('${p.id}')">+ Carrito</button>
+          <button class="btn-add-cart${!currentUser ? ' btn-add-cart--guest' : ''}" onclick="addToCart('${p.id}')">
+            ${!currentUser ? '🔒 Comprar' : '+ Carrito'}
+          </button>
         </div>
       </div>`;
   }).join('');
@@ -831,6 +915,11 @@ function renderProducts() {
 //  CART
 // ══════════════════════════════════════════════════
 function addToCart(id) {
+  if (!currentUser) {
+    openLoginOverlay('login');
+    toast('Inicia sesión para comprar', '');
+    return;
+  }
   if (cart.find(i => i.id === id)) { toast('Ya está en el carrito', 'error'); return; }
   cart.push({ id });
   saveCart(); syncCartCount();
@@ -845,13 +934,24 @@ function removeFromCart(id) {
 function saveCart() { localStorage.setItem('solaris_cart', JSON.stringify(cart)); }
 
 function renderCart() {
-  const items = cart.map(c => allProducts.find(p => p.id === c.id)).filter(Boolean);
-  const total = items.reduce((s, p) => s + calcPrice(p), 0);
-  const balance = parseFloat(currentWallet?.balance || 0);
-
+  const elGuest   = document.getElementById('cart-guest');
   const elItems   = document.getElementById('cart-items');
   const elSummary = document.getElementById('cart-summary');
   const elEmpty   = document.getElementById('cart-empty');
+
+  // Sin sesión — mostrar estado guest
+  if (!currentUser) {
+    elGuest?.classList.remove('hidden');
+    elItems.innerHTML = '';
+    elSummary.classList.add('hidden');
+    elEmpty.classList.add('hidden');
+    return;
+  }
+  elGuest?.classList.add('hidden');
+
+  const items = cart.map(c => allProducts.find(p => p.id === c.id)).filter(Boolean);
+  const total = items.reduce((s, p) => s + calcPrice(p), 0);
+  const balance = parseFloat(currentWallet?.balance || 0);
 
   if (!items.length) {
     elItems.innerHTML = '';
@@ -1126,7 +1226,50 @@ function showAuthView() {
   document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
   document.getElementById('view-auth').classList.add('active');
   document.getElementById('navbar').style.display = 'none';
-  // One Tap desactivado — se usa solo el botón OAuth manual
+}
+
+// ── Muestra el catálogo sin requerir login ──────────
+function showGuestCatalog() {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.getElementById('view-catalog')?.classList.add('active');
+  document.getElementById('navbar').style.display = '';
+  document.getElementById('nav-guest-section')?.classList.remove('hidden');
+  document.getElementById('nav-sep-auth')?.classList.add('hidden');
+  document.getElementById('bottom-nav')?.classList.remove('hidden');
+  // Activar solo el tab de tienda
+  document.querySelectorAll('.bottom-btn').forEach(b => b.classList.remove('active'));
+  document.querySelector('.bottom-btn[data-view="catalog"]')?.classList.add('active');
+  loadProducts();
+  sessionStorage.setItem('solaris_view', 'catalog');
+}
+
+// ── Login Overlay (slide-up desde abajo) ────────────
+function openLoginOverlay(startTab) {
+  startTab = startTab || 'login';
+  closeNavPanel();
+  const overlay = document.getElementById('login-overlay');
+  overlay.classList.remove('hidden');
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      overlay.classList.add('open');
+    });
+  });
+  showSheetTab(startTab);
+}
+
+function closeLoginOverlay() {
+  const overlay = document.getElementById('login-overlay');
+  overlay.classList.remove('open');
+  setTimeout(() => overlay.classList.add('hidden'), 380);
+}
+
+function showSheetTab(tab) {
+  document.querySelectorAll('.sheet-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('sheet-tab-' + tab)?.classList.add('active');
+  const lmsg = document.getElementById('sheet-login-msg');
+  const rmsg = document.getElementById('sheet-register-msg');
+  if (lmsg) lmsg.textContent = '';
+  if (rmsg) rmsg.textContent = '';
 }
 
 function switchTab(tabsSelector, contentsSelector, tabId, prefix = '') {
