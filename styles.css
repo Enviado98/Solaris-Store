@@ -2607,6 +2607,10 @@ textarea.input { resize: vertical; min-height: 80px; }
 .btn-hamburger.open span:nth-child(3) {
   transform: translateY(-7px) rotate(-45deg);
 }
+/* En navbar claro (panel abierto), las rayas son doradas */
+#navbar.panel-open .btn-hamburger span {
+  background: var(--gold);
+}
 
 /* Panel guest: header + botón de login */
 .nav-guest-header {
@@ -2835,42 +2839,87 @@ textarea.input { resize: vertical; min-height: 80px; }
 /* ═══════════════════════════════════════════════════
    NAV PANEL → FULLSCREEN OVERLAY
    ═══════════════════════════════════════════════════ */
+/* ═══════════════════════════════════════════════════
+   NAV PANEL — SLIDE FROM BOTTOM (estilo GamsGo)
+   ═══════════════════════════════════════════════════ */
 .nav-panel-fullscreen {
   position: fixed !important;
-  top: 0 !important;
+  top: var(--nav-h) !important;   /* empieza justo debajo del navbar */
   bottom: 0 !important;
   left: 0 !important;
   right: 0 !important;
   width: 100% !important;
-  height: 100% !important;
-  z-index: 800 !important;
+  height: calc(100% - var(--nav-h)) !important;
+  z-index: 799 !important;
   pointer-events: none;
-  opacity: 0;
-  transform: none !important;
-  transition: opacity 0.28s ease !important;
-  background: var(--bg) !important;
+  opacity: 1 !important;
+  transform: translateY(102%) !important;
+  transition: transform 0.38s cubic-bezier(0.32, 0.72, 0, 1) !important;
+  background: #fff !important;
   border-radius: 0 !important;
   overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
 }
 .nav-panel-fullscreen.open {
-  opacity: 1 !important;
+  transform: translateY(0) !important;
   pointer-events: all;
-  transform: none !important;
 }
+
+/* Navbar cambia a blanco cuando el panel está abierto */
+#navbar {
+  transition: background 0.28s ease, border-color 0.28s ease;
+}
+#navbar.panel-open {
+  background: #fff !important;
+  border-bottom-color: rgba(194,122,0,0.18) !important;
+}
+#navbar.panel-open .nav-logo,
+#navbar.panel-open .nav-logo svg {
+  color: var(--gold) !important;
+  stroke: var(--gold) !important;
+}
+#navbar.panel-open .solaris-brand span {
+  color: var(--gold) !important;
+}
+#navbar.panel-open .btn-hamburger span {
+  background: var(--gold) !important;
+}
+#navbar.panel-open #nav-pill-amount { color: var(--gold) !important; }
+#navbar.panel-open .nav-balance-pill {
+  background: rgba(194,122,0,0.08) !important;
+  border-color: rgba(194,122,0,0.22) !important;
+}
+#navbar.panel-open .nav-balance-pill > svg { color: var(--gold) !important; }
+
+/* Backdrop detrás del panel (semitransparente) */
+.nav-panel-backdrop {
+  position: fixed;
+  inset: 0;
+  top: var(--nav-h);
+  background: rgba(0,0,0,0);
+  z-index: 798;
+  pointer-events: none;
+  transition: background 0.32s ease;
+}
+.nav-panel-backdrop.visible {
+  background: rgba(0,0,0,0.32);
+  pointer-events: all;
+}
+
 .nav-panel-fullscreen .nav-panel-inner {
   border-radius: 0 !important;
   padding: 0 !important;
-  min-height: 100vh;
+  min-height: 100%;
   display: flex;
   flex-direction: column;
 }
-/* Header del panel fullscreen */
+
+/* Header del panel */
 .nav-panel-fullscreen-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 16px 20px;
-  border-bottom: 1px solid var(--border);
+  padding: 22px 20px 16px;
 }
 .nav-panel-fullscreen-logo {
   display: flex;
@@ -2879,7 +2928,7 @@ textarea.input { resize: vertical; min-height: 80px; }
   color: var(--gold);
   font-family: 'Rajdhani', sans-serif;
   font-weight: 700;
-  font-size: 1.1rem;
+  font-size: 1.15rem;
   letter-spacing: 0.1em;
 }
 .nav-panel-close-btn {
@@ -2894,30 +2943,117 @@ textarea.input { resize: vertical; min-height: 80px; }
   justify-content: center;
   transition: background 0.18s;
 }
-.nav-panel-close-btn:hover { background: var(--bg3); }
-/* Body del panel fullscreen */
+.nav-panel-close-btn:hover { background: rgba(0,0,0,0.06); }
+
+/* Body del panel */
 .nav-panel-fullscreen-body {
-  padding: 20px 20px 40px;
+  padding: 4px 16px 40px;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 0;
   flex: 1;
 }
-/* Drag handle para el nav panel (oculto en fullscreen) */
-.nav-panel-drag {
-  display: none !important;
-}
-/* Items más grandes para touch */
+
+/* Drag handle oculto */
+.nav-panel-drag { display: none !important; }
+
+/* Items del panel — estilo GamsGo (lista limpia) */
 .nav-panel-item {
-  padding: 15px 16px !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 14px !important;
+  padding: 16px 6px !important;
   font-size: 1rem !important;
-  border-radius: 14px !important;
+  font-weight: 500 !important;
+  color: var(--text) !important;
+  border-radius: 0 !important;
+  border-bottom: 1px solid rgba(0,0,0,0.07) !important;
+  background: none !important;
+  width: 100% !important;
+  text-align: left !important;
+  text-decoration: none !important;
+  cursor: pointer !important;
+  transition: background 0.15s !important;
+  border-left: none !important;
+  border-right: none !important;
+  border-top: none !important;
 }
-/* Login CTA en el panel */
+.nav-panel-item:hover { background: rgba(0,0,0,0.03) !important; }
+.nav-panel-item svg { color: #555; flex-shrink: 0; }
+
+/* Separador limpio */
+.nav-panel-sep {
+  height: 1px;
+  background: rgba(0,0,0,0.07);
+  margin: 8px 0;
+  border: none;
+}
+
+/* Login CTA */
 .nav-login-cta {
-  margin: 8px 0 6px;
-  border-radius: 14px !important;
+  display: block;
+  width: 100%;
+  background: var(--gold);
+  color: #fff !important;
+  border: none;
+  border-radius: 50px !important;
+  font-family: 'Exo 2', sans-serif;
+  font-size: 0.95rem;
+  font-weight: 700;
+  padding: 14px 16px;
+  cursor: pointer;
+  transition: opacity 0.2s, transform 0.15s;
+  margin: 8px 0 4px;
+  letter-spacing: 0.02em;
+  text-align: center;
 }
+.nav-login-cta:hover { opacity: 0.88; transform: scale(0.98); }
+
+/* Sección guest en el panel */
+.nav-guest-section { display: flex; flex-direction: column; }
+.nav-guest-header { display: none; } /* el logo ya está en el header del panel */
+.nav-guest-sub {
+  font-size: 0.85rem;
+  color: #666;
+  text-align: center;
+  margin: 2px 0 16px;
+}
+.nav-guest-sub span { color: var(--gold); cursor: pointer; font-weight: 600; }
+.nav-guest-sub span:hover { text-decoration: underline; }
+
+/* Balance en panel */
+.nav-panel-balance {
+  display: flex !important;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 6px !important;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text);
+  border-bottom: 1px solid rgba(0,0,0,0.07);
+}
+
+/* Badge de carrito */
+.nav-panel-badge {
+  margin-left: auto;
+  background: var(--gold);
+  color: #fff;
+  font-size: 0.72rem;
+  font-weight: 700;
+  border-radius: 999px;
+  padding: 2px 7px;
+  min-width: 20px;
+  text-align: center;
+}
+
+/* Admin item color */
+.nav-panel-admin { color: var(--text) !important; }
+.nav-panel-admin:hover { background: rgba(0,0,0,0.03) !important; }
+
+/* Logout — color rojo sutil */
+.nav-panel-logout { color: #c62828 !important; }
+.nav-panel-logout svg { color: #c62828 !important; }
+.nav-panel-logout:hover { background: rgba(198,40,40,0.05) !important; }
 
 /* ═══════════════════════════════════════════════════
    PARTE 2 — Guest cart state + product btn refinements
@@ -3070,17 +3206,4 @@ textarea.input { resize: vertical; min-height: 80px; }
 }
 .cat-tab.active .iconify { color: #fff; }
 
-/* ═══════════════════════════════════════════════════
-   NAV PANEL FULLSCREEN — layout interno mejorado
-   ═══════════════════════════════════════════════════ */
-/* Asegurar que el panel fullscreen no tenga el drag handle */
-.nav-panel-fullscreen .nav-panel-drag { display: none !important; }
-
-/* Slide animation: panel entra desde la derecha */
-.nav-panel-fullscreen {
-  transform: translateX(100%) !important;
-  transition: opacity 0.3s ease, transform 0.35s cubic-bezier(0.23,1,0.32,1) !important;
-}
-.nav-panel-fullscreen.open {
-  transform: translateX(0) !important;
-}
+/* nav-panel-fullscreen slide-from-bottom override (ver bloque principal arriba) */
