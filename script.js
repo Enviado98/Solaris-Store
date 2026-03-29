@@ -1369,132 +1369,111 @@ function initAccountListeners() {
       `<button class="dep-amt-btn${a === _depAmount ? ' active' : ''}" data-amount="${a}">$${a}</button>`
     ).join('');
 
-    return `
-      <div style="display:flex;flex-direction:column;gap:18px;padding:2px 0">
+    return `<div class="dep-wrap">
 
-        <!-- Métodos de pago -->
-        <div>
-          <div class="dep-step-title">Método de pago</div>
-          <div class="dep-method-grid">
+      <!-- Tabs de método -->
+      <div class="dep-tabs">
+        <button class="dep-tab active" data-method="card">
+          <div class="dep-tab-dot"></div>
+          Tarjeta
+        </button>
+        <button class="dep-tab" data-method="oxxo">
+          <div class="dep-tab-dot"></div>
+          OXXO Pay
+        </button>
+      </div>
 
-            <button class="dep-method-card active" data-method="card">
-              <div class="dep-method-icon">
-                <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="color:var(--gold)">
-                  <rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/>
-                </svg>
-              </div>
-              <div class="dep-method-info">
-                <div class="dep-method-name">Tarjeta de crédito o débito</div>
-                <div class="dep-method-desc">Visa, Mastercard, American Express</div>
-              </div>
-              <div class="dep-method-check">
-                <svg width="10" height="10" viewBox="0 0 12 12" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="2 6 5 9 10 3"/></svg>
-              </div>
-            </button>
-
-            <button class="dep-method-card" data-method="oxxo">
-              <div class="dep-method-icon">
-                <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="color:var(--gold)">
-                  <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>
-                </svg>
-              </div>
-              <div class="dep-method-info">
-                <div class="dep-method-name">Pago en OXXO</div>
-                <div class="dep-method-desc">Efectivo · Cupón válido 3 días</div>
-              </div>
-              <div class="dep-method-check">
-                <svg width="10" height="10" viewBox="0 0 12 12" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="2 6 5 9 10 3"/></svg>
-              </div>
-            </button>
-
-          </div>
+      <!-- Monto -->
+      <div class="dep-amount-section">
+        <span class="dep-section-label">Monto a depositar</span>
+        <div class="dep-amounts">${presets}</div>
+        <div class="dep-custom-wrap">
+          <span class="dep-currency">$</span>
+          <input id="dep-custom" type="number" min="20" max="50000"
+            placeholder="Otro monto (mín. $20)" class="dep-custom-input"/>
+          <span class="dep-currency-label">MXN</span>
         </div>
+      </div>
 
-        <!-- Monto -->
-        <div>
-          <div class="dep-step-title">Monto a depositar</div>
-          <div class="dep-amounts">${presets}</div>
-          <div class="dep-custom-wrap" style="margin-top:8px">
-            <span class="dep-currency">$</span>
-            <input id="dep-custom" type="number" min="20" max="50000"
-              placeholder="Otro monto" class="dep-custom-input"/>
-            <span class="dep-currency-label">MXN</span>
-          </div>
-        </div>
+      <!-- Panel método — altura fija para evitar saltos -->
+      <div class="dep-panel">
 
-        <!-- Formulario tarjeta -->
-        <div id="dep-card-section" class="dep-form-section">
-          <label class="dep-field-label">Datos de la tarjeta</label>
+        <!-- Tarjeta -->
+        <div id="dep-card-section" class="dep-panel-inner dep-visible">
+          <span class="dep-card-label">Datos de la tarjeta</span>
           <div id="dep-stripe-card"></div>
         </div>
 
-        <!-- Info OXXO -->
-        <div id="dep-oxxo-section" style="display:none">
-          <div class="dep-oxxo-wrap">
-            <div class="dep-oxxo-header">
-              <div class="dep-oxxo-logo">🏪</div>
-              <div>
-                <div class="dep-oxxo-title">Pago en tienda OXXO</div>
-                <div class="dep-oxxo-subtitle">Más de 20,000 tiendas en México</div>
-              </div>
+        <!-- OXXO -->
+        <div id="dep-oxxo-section" class="dep-panel-inner">
+          <div class="dep-oxxo-box">
+            <div class="dep-oxxo-row">
+              <div class="dep-oxxo-num">1</div>
+              <span>Confirma y genera tu <strong>cupón de pago</strong></span>
             </div>
-            <div class="dep-oxxo-steps">
-              <div class="dep-oxxo-step">
-                <div class="dep-oxxo-num">1</div>
-                <span>Confirma el monto y genera tu cupón de pago</span>
-              </div>
-              <div class="dep-oxxo-step">
-                <div class="dep-oxxo-num">2</div>
-                <span>Lleva el cupón a cualquier OXXO y paga en caja</span>
-              </div>
-              <div class="dep-oxxo-step">
-                <div class="dep-oxxo-num">3</div>
-                <span>Tu saldo se acredita automáticamente en ~1 hora</span>
-              </div>
+            <div class="dep-oxxo-row">
+              <div class="dep-oxxo-num">2</div>
+              <span>Preséntalo en <strong>cualquier OXXO</strong> y paga en caja</span>
             </div>
-            <div class="dep-oxxo-note">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-              El cupón vence en 72 horas si no se paga
+            <div class="dep-oxxo-row">
+              <div class="dep-oxxo-num">3</div>
+              <span>Tu saldo se acredita en <strong>~1 hora</strong> automáticamente</span>
             </div>
           </div>
         </div>
 
-        <!-- Error -->
-        <div id="dep-error" class="dep-error" style="display:none">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-          <span id="dep-error-text"></span>
-        </div>
+      </div>
 
-        <!-- Botón pagar -->
-        <button id="dep-pay-btn" class="dep-pay-btn">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
-          <span id="dep-pay-label">Pagar $100 MXN</span>
-        </button>
+      <!-- Error -->
+      <div id="dep-error" class="dep-error">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        <span id="dep-error-text"></span>
+      </div>
 
-        <!-- Pie -->
-        <div class="dep-footer">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
-          Pagos procesados de forma segura por
-          <svg width="34" height="14" viewBox="0 0 60 25" fill="none" xmlns="http://www.w3.org/2000/svg" style="opacity:.6"><path d="M59.64 14.28h-8.06c.19 1.93 1.6 2.55 3.2 2.55 1.64 0 2.96-.37 4.05-.95v3.32a10.2 10.2 0 01-4.56.96c-4.01 0-6.83-2.5-6.83-7.48 0-4.19 2.39-7.52 6.3-7.52 3.92 0 5.96 3.28 5.96 7.5 0 .4-.04 1.09-.06 1.62zm-5.92-5.62c-1.03 0-2.17.73-2.17 2.58h4.25c0-1.85-1.07-2.58-2.08-2.58zM40.95 20.24c-1.12 0-1.97-.5-2.46-1.32l-.12 1.1h-3.4V0l3.86-.82.01 7.31c.6-.44 1.37-.74 2.4-.74 2.42 0 4.63 1.96 4.63 7.38 0 5.23-2.27 7.11-4.92 7.11zm-.88-10.31c-.45 0-.72.15-.9.32l.03 6.45c.19.2.47.35.87.35 1.06 0 1.75-1.18 1.75-3.54 0-2.43-.71-3.58-1.75-3.58zM28.24 5.07c-1.06 0-1.75-.71-1.75-1.65C26.49.84 27.18 0 28.24 0s1.75.84 1.75 1.42c0 .94-.69 1.65-1.75 1.65zm1.97 14.98h-3.88V5.74l3.88-.82v15.13zm-6.4 0h-3.86V9.54c0-.86.07-2.2.13-3.06l-3.29 13.65H14l-3.31-13.65c.07.87.13 2.2.13 3.06v10.51H7V0h5.46l3.06 11.77L18.6 0h5.21v20.05zm-22.7 0H-2V0h7.22c3.48 0 5.49 2.07 5.49 5.38 0 3.7-2.01 5.45-5.49 5.45H1.11v9.22zm0-12.57h1.97c1.22 0 2.02-.7 2.02-2.07 0-1.35-.8-2.04-2.02-2.04H1.11v4.11z" fill="currentColor"/></svg>
-        </div>
+      <!-- Botón -->
+      <button id="dep-pay-btn" class="dep-pay-btn">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+        <span id="dep-pay-label">Pagar $100 MXN</span>
+      </button>
 
-      </div>`;
+      <!-- Seguridad -->
+      <p class="dep-secure">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+        Pago seguro procesado por Stripe
+      </p>
+
+    </div>`;
   }
 
   function _setupDepositEvents() {
-    // Método de pago — nuevas tarjetas
-    document.querySelectorAll('.dep-method-card').forEach(btn =>
-      btn.addEventListener('click', () => {
-        document.querySelectorAll('.dep-method-card').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        _depMethod = btn.dataset.method;
+    // Tabs de método
+    document.querySelectorAll('.dep-tab').forEach(tab =>
+      tab.addEventListener('click', () => {
+        document.querySelectorAll('.dep-tab').forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+        _depMethod = tab.dataset.method;
         const isCard = _depMethod === 'card';
+
         const cardSec = document.getElementById('dep-card-section');
         const oxxoSec = document.getElementById('dep-oxxo-section');
-        const payIcon = document.getElementById('dep-pay-icon');
-        if (cardSec) cardSec.style.display = isCard ? '' : 'none';
-        if (oxxoSec) oxxoSec.style.display = isCard ? 'none' : '';
-        if (isCard) _mountCard();
+
+        // Transición suave sin saltos
+        if (isCard) {
+          oxxoSec.classList.remove('dep-visible');
+          setTimeout(() => {
+            oxxoSec.style.display = 'none';
+            cardSec.style.display = '';
+            _mountCard();
+            requestAnimationFrame(() => cardSec.classList.add('dep-visible'));
+          }, 180);
+        } else {
+          cardSec.classList.remove('dep-visible');
+          setTimeout(() => {
+            cardSec.style.display = 'none';
+            oxxoSec.style.display = '';
+            requestAnimationFrame(() => oxxoSec.classList.add('dep-visible'));
+          }, 180);
+        }
         _updateDepBtn();
       })
     );
@@ -1505,12 +1484,13 @@ function initAccountListeners() {
         document.querySelectorAll('.dep-amt-btn').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
         _depAmount = parseInt(btn.dataset.amount);
-        document.getElementById('dep-custom').value = '';
+        const custom = document.getElementById('dep-custom');
+        if (custom) custom.value = '';
         _updateDepBtn();
       })
     );
 
-    // Monto personalizado
+    // Monto custom
     document.getElementById('dep-custom')?.addEventListener('input', e => {
       const v = parseFloat(e.target.value);
       document.querySelectorAll('.dep-amt-btn').forEach(b => b.classList.remove('active'));
@@ -1524,9 +1504,12 @@ function initAccountListeners() {
   function _updateDepBtn() {
     const lbl = document.getElementById('dep-pay-label');
     if (!lbl) return;
-    lbl.textContent = _depAmount >= 20
-      ? `Pagar $${_depAmount} MXN`
-      : 'Monto mínimo: $20 MXN';
+    if (_depAmount >= 20) {
+      const action = _depMethod === 'oxxo' ? 'Generar cupón OXXO' : 'Pagar';
+      lbl.textContent = `${action} · $${_depAmount} MXN`;
+    } else {
+      lbl.textContent = 'Ingresa un monto válido';
+    }
   }
 
   function _mountCard() {
@@ -1536,21 +1519,19 @@ function initAccountListeners() {
     }
     const el = document.getElementById('dep-stripe-card');
     if (!el) return;
-    _stripeElements = getStripe().elements({
-      locale: 'es',
-      appearance: {
-        theme: 'night',
-        variables: {
-          colorPrimary: '#c8860a',
-          colorBackground: '#1a1410',
-          colorText: '#f5e6c8',
-          borderRadius: '10px',
-          fontSizeBase: '15px',
-        }
+    _stripeCard = getStripe().elements({ locale: 'es' }).create('card', {
+      hidePostalCode: true,
+      style: {
+        base: {
+          fontSize: '15px',
+          fontFamily: '"Helvetica Neue", Helvetica, sans-serif',
+          color: '#1a1a2e',
+          fontWeight: '500',
+          letterSpacing: '0.01em',
+          '::placeholder': { color: '#9ca3af' },
+        },
+        invalid: { color: '#dc2626', iconColor: '#dc2626' },
       }
-    });
-    _stripeCard = _stripeElements.create('card', {
-      style: { base: { fontSize: '15px', color: '#f5e6c8', '::placeholder': { color: '#8a7050' } } }
     });
     _stripeCard.mount(el);
   }
