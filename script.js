@@ -1338,20 +1338,229 @@ function initAccountListeners() {
     document.getElementById('acct-edit-btn')?.classList.remove('active');
   });
 
+  // ── STRIPE ─────────────────────────────────────────────────
+  const STRIPE_PK = 'pk_live_51TGAI3JweVr0KEoV8uHvCnWwwoORIsxKMSgglJJ5sO8W7LwCSqWswNdRhpDBkKN50a1HtIXukH3rdlTZhEuWMNWx00qEtUduFg';
+  let _stripe = null;
+  let _stripeElements = null;
+  let _stripeCardElement = null;
+  let _depositMethod = 'card';
+  let _depositAmount = 0;
+
+  function getStripe() {
+    if (!_stripe) _stripe = Stripe(STRIPE_PK);
+    return _stripe;
+  }
+
+  const DEPOSIT_AMOUNTS = [50, 100, 200, 500];
+
   function showDepositModal() {
-    showModal('💰 Depositar saldo',
-      `<div style="text-align:center;padding:8px 0 4px">
-        <div style="width:56px;height:56px;background:linear-gradient(135deg,#16a34a,#22c55e);border-radius:16px;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;box-shadow:0 6px 20px rgba(22,163,74,0.4)">
-          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+    _depositMethod = 'card';
+    _depositAmount = 100;
+    showModal('💰 Depositar saldo', buildDepositHTML());
+    setTimeout(() => {
+      setupDepositListeners();
+      mountStripeCard();
+    }, 50);
+  }
+
+  function buildDepositHTML() {
+    const amountBtns = DEPOSIT_AMOUNTS.map(a =>
+      `<button class="dep-amt-btn${a === _depositAmount ? ' active' : ''}" data-amount="${a}">$${a}</button>`
+    ).join('');
+
+    return `
+      <div class="dep-wrap">
+        <div class="dep-methods">
+          <button class="dep-method-btn active" data-method="card">
+            <span>💳</span> Tarjeta
+          </button>
+          <button class="dep-method-btn" data-method="oxxo">
+            <span>🏪</span> OXXO
+          </button>
         </div>
-        <p style="font-size:0.9rem;color:var(--text-dim);line-height:1.5;margin-bottom:18px">Para agregar saldo a tu cuenta,<br>contacta a un administrador.</p>
-        <div style="background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:14px 16px;text-align:left;font-size:0.82rem;color:var(--text-dim);line-height:1.7">
-          <div>📱 <strong style="color:var(--text)">WhatsApp</strong> · Disponible 9am–9pm</div>
-          <div>📧 <strong style="color:var(--text)">Email</strong> · soporte@solaris.store</div>
+
+        <div class="dep-amounts">${amountBtns}</div>
+        <div class="dep-custom-wrap">
+          <span class="dep-currency">$</span>
+          <input id="dep-custom-input" type="number" min="20" max="50000"
+            placeholder="Otro monto (mín. $20)" class="dep-custom-input"/>
+          <span class="dep-currency-label">MXN</span>
         </div>
-        <p style="font-size:0.75rem;color:var(--text-dim);margin-top:14px;opacity:0.7">El saldo se refleja en minutos ✓</p>
-      </div>`
-    );
+
+        <div id="dep-card-section">
+          <div id="dep-stripe-card"></div>
+        </div>
+
+        <div id="dep-oxxo-section" style="display:none">
+          <p class="dep-oxxo-info">
+            📋 Se generará un cupón de pago.<br>
+            Llévalo a cualquier OXXO y paga en caja.<br>
+            <strong>Tu saldo se acredita en ~1 hora.</strong>
+          </p>
+        </div>
+
+        <div id="dep-error" class="dep-error" style="display:none"></div>
+
+        <button id="dep-pay-btn" class="dep-pay-btn">
+          <span id="dep-pay-label">Pagar $100 MXN</span>
+        </button>
+
+        <p class="dep-secure">🔒 Pagos seguros con Stripe</p>
+      </div>
+    `;
+  }
+
+  function setupDepositListeners() {
+    // Métodos
+    document.querySelectorAll('.dep-method-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.dep-method-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        _depositMethod = btn.dataset.method;
+        const cardSec = document.getElementById('dep-card-section');
+        const oxxoSec = document.getElementById('dep-oxxo-section');
+        if (_depositMethod === 'card') {
+          cardSec.style.display = '';
+          oxxoSec.style.display = 'none';
+          mountStripeCard();
+        } else {
+          cardSec.style.display = 'none';
+          oxxoSec.style.display = '';
+        }
+        updatePayBtn();
+      });
+    });
+
+    // Montos preset
+    document.querySelectorAll('.dep-amt-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.dep-amt-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        _depositAmount = parseInt(btn.dataset.amount);
+        document.getElementById('dep-custom-input').value = '';
+        updatePayBtn();
+      });
+    });
+
+    // Monto custom
+    document.getElementById('dep-custom-input')?.addEventListener('input', e => {
+      const val = parseFloat(e.target.value);
+      document.querySelectorAll('.dep-amt-btn').forEach(b => b.classList.remove('active'));
+      _depositAmount = val >= 20 ? val : 0;
+      updatePayBtn();
+    });
+
+    // Botón pagar
+    document.getElementById('dep-pay-btn')?.addEventListener('click', handleDepositPay);
+  }
+
+  function updatePayBtn() {
+    const label = document.getElementById('dep-pay-label');
+    if (!label) return;
+    if (_depositAmount >= 20) {
+      label.textContent = `Pagar $${_depositAmount} MXN`;
+    } else {
+      label.textContent = 'Monto mínimo: $20 MXN';
+    }
+  }
+
+  function mountStripeCard() {
+    if (_stripeCardElement) {
+      try { _stripeCardElement.unmount(); } catch(e) {}
+      _stripeCardElement = null;
+      _stripeElements = null;
+    }
+    const container = document.getElementById('dep-stripe-card');
+    if (!container) return;
+    const stripe = getStripe();
+    _stripeElements = stripe.elements({
+      locale: 'es',
+      appearance: {
+        theme: 'night',
+        variables: {
+          colorPrimary: '#a78bfa',
+          colorBackground: '#1a1a2e',
+          colorText: '#e2e8f0',
+          borderRadius: '10px',
+          fontSizeBase: '15px',
+        }
+      }
+    });
+    _stripeCardElement = _stripeElements.create('card', {
+      style: {
+        base: { fontSize: '15px', color: '#e2e8f0', '::placeholder': { color: '#64748b' } }
+      }
+    });
+    _stripeCardElement.mount(container);
+  }
+
+  async function handleDepositPay() {
+    if (!currentUser) return toast('Inicia sesión primero', 'error');
+    if (_depositAmount < 20) return toast('Monto mínimo: $20 MXN', 'error');
+
+    const btn = document.getElementById('dep-pay-btn');
+    const errEl = document.getElementById('dep-error');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="dep-spinner"></span> Procesando...';
+    errEl.style.display = 'none';
+
+    try {
+      // 1. Crear PaymentIntent en Edge Function
+      const res = await fetch(`${SUPABASE_URL}/functions/v1/create-payment`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+        },
+        body: JSON.stringify({
+          amount:   _depositAmount,
+          method:   _depositMethod,
+          user_id:  currentUser.id,
+          email:    currentUser.email,
+        }),
+      });
+
+      const data = await res.json();
+      if (data.error) throw new Error(data.error);
+
+      const stripe = getStripe();
+
+      if (_depositMethod === 'card') {
+        // 2a. Confirmar pago con tarjeta
+        const { error, paymentIntent } = await stripe.confirmCardPayment(data.client_secret, {
+          payment_method: { card: _stripeCardElement }
+        });
+        if (error) throw new Error(error.message);
+        if (paymentIntent.status === 'succeeded') {
+          closeModal();
+          toast('✅ ¡Pago exitoso! Tu saldo se acreditará en breve.', 'success');
+          setTimeout(() => loadUserData(currentUser.id), 3000);
+        }
+
+      } else {
+        // 2b. OXXO — confirmar y mostrar cupón
+        const { error, paymentIntent } = await stripe.confirmOxxoPayment(data.client_secret, {
+          payment_method: {
+            billing_details: {
+              name:  currentProfile?.username || 'Cliente',
+              email: currentUser.email,
+            }
+          }
+        });
+        if (error && error.type !== 'payment_intent_unexpected_state') {
+          throw new Error(error.message);
+        }
+        // Stripe abre automáticamente el PDF del cupón OXXO
+        closeModal();
+        toast('🏪 Cupón OXXO generado. Paga en tienda y tu saldo se acreditará en ~1 hora.', 'success');
+      }
+
+    } catch (err) {
+      errEl.textContent = err.message || 'Error al procesar el pago';
+      errEl.style.display = 'block';
+      btn.disabled = false;
+      btn.innerHTML = `<span id="dep-pay-label">Pagar $${_depositAmount} MXN</span>`;
+    }
   }
 
   document.getElementById('acct-deposit-btn')?.addEventListener('click', showDepositModal);
