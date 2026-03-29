@@ -88,16 +88,26 @@
             <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
           </button>
         </div>
-        <button id="nav-menu-btn" class="btn-dots" aria-label="Menú">
+        <button id="nav-menu-btn" class="btn-hamburger" aria-label="Menú">
           <span></span><span></span><span></span>
         </button>
       </div>
     </nav>
 
-    <!-- PANEL DESPLEGABLE (slide-up estilo GamsGo) -->
-    <div id="nav-panel" class="nav-panel">
-      <div class="nav-panel-drag"></div>
+    <!-- PANEL FULLSCREEN (estilo GamsGo) -->
+    <div id="nav-panel" class="nav-panel nav-panel-fullscreen">
       <div class="nav-panel-inner">
+        <!-- Header del panel -->
+        <div class="nav-panel-fullscreen-header">
+          <div class="nav-panel-fullscreen-logo">
+            <svg width="22" height="22"><use href="#ico-hex"/></svg>
+            <span>SOLARIS</span>
+          </div>
+          <button class="nav-panel-close-btn" id="nav-panel-close-btn" aria-label="Cerrar menú">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+        </div>
+        <div class="nav-panel-fullscreen-body">
 
         <!-- Seccion GUEST (sin sesion) -->
         <div id="nav-guest-section" class="nav-guest-section hidden">
@@ -147,6 +157,7 @@
           Cerrar Sesion
         </button>
 
+        </div><!-- /nav-panel-fullscreen-body -->
       </div>
     </div>
 
@@ -247,6 +258,30 @@
           <div class="store-hero">
             <div class="store-hero-label">Solaris Store</div>
             <h1 class="store-hero-title">¿Qué necesitas<br>hoy?</h1>
+          </div>
+
+          <!-- Tabs de categorías estilo GamsGo -->
+          <div class="cat-tabs-bar">
+            <button class="cat-tab active" data-cat-tab="Streaming">
+              <span class="iconify" data-icon="material-symbols:tv-play-outline-rounded"></span>
+              Streaming
+            </button>
+            <button class="cat-tab" data-cat-tab="Musica">
+              <span class="iconify" data-icon="material-symbols:music-note-outline-rounded"></span>
+              Música
+            </button>
+            <button class="cat-tab" data-cat-tab="Gaming">
+              <span class="iconify" data-icon="material-symbols:sports-esports-outline-rounded"></span>
+              Gaming
+            </button>
+            <button class="cat-tab" data-cat-tab="Software">
+              <span class="iconify" data-icon="material-symbols:deployed-code-outline"></span>
+              Software
+            </button>
+            <button class="cat-tab" data-cat-tab="Internet">
+              <span class="iconify" data-icon="material-symbols:wifi-outline-rounded"></span>
+              Internet
+            </button>
           </div>
 
           <!-- Carrusel de categorías -->

@@ -513,27 +513,13 @@ async function fetchWallet(uid) {
 function openNavPanel() {
   document.getElementById('nav-panel').classList.add('open');
   document.getElementById('nav-menu-btn').classList.add('open');
-  // Crear backdrop si no existe
-  if (!document.getElementById('nav-panel-backdrop')) {
-    const bd = document.createElement('div');
-    bd.id = 'nav-panel-backdrop';
-    bd.className = 'nav-panel-backdrop';
-    bd.addEventListener('click', closeNavPanel);
-    document.body.appendChild(bd);
-  }
-  requestAnimationFrame(() => {
-    document.getElementById('nav-panel-backdrop')?.classList.add('visible');
-  });
+  document.body.style.overflow = 'hidden';
 }
 function closeNavPanel() {
   document.getElementById('nav-panel').classList.remove('open');
   const btn = document.getElementById('nav-menu-btn');
   if (btn) btn.classList.remove('open');
-  const bd = document.getElementById('nav-panel-backdrop');
-  if (bd) {
-    bd.classList.remove('visible');
-    setTimeout(() => bd.remove(), 320);
-  }
+  document.body.style.overflow = '';
 }
 function toggleNavPanel() {
   const panel = document.getElementById('nav-panel');
@@ -622,6 +608,64 @@ function setupEvents() {
     e.stopPropagation();
     toggleNavPanel();
   });
+
+  // ── Botón X del panel fullscreen
+  document.getElementById('nav-panel-close-btn')?.addEventListener('click', closeNavPanel);
+
+  // ── Cerrar panel con tecla Escape
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') closeNavPanel();
+  });
+
+  // ── Category tabs logic
+  document.querySelectorAll('.cat-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      // Marcar tab activo
+      document.querySelectorAll('.cat-tab').forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+
+      const catKey = tab.dataset.catTab;
+
+      // Mapear tab → índice del carrusel
+      const catIndexMap = {
+        'Streaming': 0,
+        'Musica': 1,
+        'Gaming': 2,
+        'Software': 3,
+        'Internet': 4
+      };
+      const idx = catIndexMap[catKey] ?? 0;
+
+      // Scroll del carrusel al índice correspondiente
+      const carousel = document.getElementById('cat-carousel');
+      if (carousel) {
+        const card = carousel.children[idx];
+        if (card) {
+          card.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+        }
+      }
+
+      // También actualizar los dots indicadores
+      document.querySelectorAll('.cdot').forEach((dot, i) => {
+        dot.classList.toggle('active', i === idx);
+      });
+    });
+  });
+
+  // ── Sincronizar tabs con scroll del carrusel
+  const carousel = document.getElementById('cat-carousel');
+  if (carousel) {
+    carousel.addEventListener('scroll', () => {
+      const cards = carousel.querySelectorAll('.cat-card');
+      const scrollLeft = carousel.scrollLeft;
+      const cardWidth = carousel.offsetWidth;
+      const idx = Math.round(scrollLeft / cardWidth);
+      const catKeys = ['Streaming', 'Musica', 'Gaming', 'Software', 'Internet'];
+      document.querySelectorAll('.cat-tab').forEach((tab, i) => {
+        tab.classList.toggle('active', i === idx);
+      });
+    }, { passive: true });
+  }
 
   // ── Guest: botón "Iniciar Sesión" en panel
   document.getElementById('nav-login-btn')?.addEventListener('click', () => {
