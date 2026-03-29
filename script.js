@@ -908,38 +908,88 @@ let _notifTimer = null;
  * type: 'in' | 'out' | 'pending'
  * Llamar con datos reales cuando llegue Mercado Pago.
  */
+// SVG icons for card notifications
+const _notifSVGs = {
+  out: `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>`,
+  in:  `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/></svg>`,
+  pending: `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>`
+};
+
 function showCardNotif(type, amount, label) {
   const el   = document.getElementById('acct-notif');
   const icon = document.getElementById('acct-notif-icon');
   const text = document.getElementById('acct-notif-text');
   if (!el) return;
 
-  // Configurar contenido según tipo
+  const fmt = `$${parseFloat(amount).toFixed(2)}`;
+
+  let phase1, phase2, colorClass, iconSvg;
+
   if (type === 'in') {
-    icon.textContent = '⬇️';
-    text.innerHTML = `<span style="color:#4ade80;font-weight:700">+$${parseFloat(amount).toFixed(2)}</span> ${label || 'Recarga'} · Acreditado`;
+    iconSvg = _notifSVGs.in;
+    colorClass = 'notif-color-in';
+    phase1 = `Procesando transferencia...`;
+    phase2 = label ? `${label.replace(/^Recibido de /,'Recibido de ')} · <span class="notif-amt">${fmt}</span>` : `Recibido · <span class="notif-amt">+${fmt}</span>`;
   } else if (type === 'out') {
-    icon.textContent = '⬆️';
-    text.innerHTML = `<span style="color:#f87171;font-weight:700">-$${parseFloat(amount).toFixed(2)}</span> ${label || 'Enviado'}`;
+    iconSvg = _notifSVGs.out;
+    colorClass = 'notif-color-out';
+    phase1 = `Procesando transferencia...`;
+    // Extract username from label like "Enviado a @maria"
+    const dest = label ? label.replace(/^Enviado a /, '') : '';
+    phase2 = `Enviando <span class="notif-amt">${fmt}</span>${dest ? ' a ' + dest : ''}`;
   } else if (type === 'pending') {
-    icon.textContent = '⏳';
-    text.innerHTML = `<span style="color:#fbbf24;font-weight:700">+$${parseFloat(amount).toFixed(2)}</span> ${label || 'Recarga'} · Se acreditará en breve…`;
+    iconSvg = _notifSVGs.pending;
+    colorClass = 'notif-color-pending';
+    phase1 = `Procesando pago...`;
+    phase2 = `<span class="notif-amt">+${fmt}</span> · Se acreditará en breve`;
   }
 
-  // Limpiar timer anterior
-  clearTimeout(_notifTimer);
-  el.className = 'acct-notif notif-enter';
+  icon.innerHTML = iconSvg;
+  icon.className = `acct-notif-icon ${colorClass}`;
 
-  // Forzar reflow para que la transición funcione
+  // Clear any previous cycle
+  clearTimeout(_notifTimer);
+  if (el._cycleInterval) { clearInterval(el._cycleInterval); el._cycleInterval = null; }
+
+  // Set up cycling text
+  let currentPhase = 0;
+  const phases = [phase1, phase2];
+
+  function setPhase(p) {
+    text.classList.remove('notif-text-visible');
+    text.classList.add('notif-text-exit');
+    setTimeout(() => {
+      text.innerHTML = `<span class="notif-shimmer">${phases[p]}</span>`;
+      text.classList.remove('notif-text-exit');
+      text.classList.add('notif-text-enter');
+      void text.offsetWidth;
+      text.classList.add('notif-text-visible');
+    }, 280);
+  }
+
+  // Show first phase immediately
+  text.innerHTML = `<span class="notif-shimmer">${phases[0]}</span>`;
+  text.className = 'acct-notif-text notif-text-enter notif-text-visible';
+
+  // Show notification
+  el.className = `acct-notif ${colorClass} notif-enter`;
   void el.offsetWidth;
   el.classList.add('notif-visible');
 
-  // Auto-ocultar después de 4 segundos
+  // Cycle every 2 seconds
+  el._cycleInterval = setInterval(() => {
+    currentPhase = (currentPhase + 1) % 2;
+    setPhase(currentPhase);
+  }, 2000);
+
+  // Hide after 10 seconds
   _notifTimer = setTimeout(() => {
+    clearInterval(el._cycleInterval);
+    el._cycleInterval = null;
     el.classList.remove('notif-visible');
     el.classList.add('notif-exit');
-    setTimeout(() => { el.className = 'acct-notif'; }, 450);
-  }, 4000);
+    setTimeout(() => { el.className = 'acct-notif'; text.className = 'acct-notif-text'; }, 450);
+  }, 10000);
 }
 
 // TODO: cuando integres Mercado Pago, llama así al confirmar pago:
