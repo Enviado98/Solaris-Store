@@ -943,10 +943,8 @@ function showCardNotif(type, amount, label, onComplete) {
   if (type === 'in') {
     iconSvg = _notifSVGs.in;
     colorClass = 'notif-color-in';
-    // Extract sender from label "Recibido de @maria"
-    const sender = label ? label.replace(/^Recibido de /, '') : '';
     phase1 = `Procesando pago...`;
-    phase2 = `Recibiendo <span class="notif-amt">${fmt}</span>${sender ? ' de ' + sender : ''}`;
+    phase2 = `Recibiendo <span class="notif-amt">${fmt}</span>${label ? ' de ' + label : ''}`;
   } else if (type === 'out') {
     iconSvg = _notifSVGs.out;
     colorClass = 'notif-color-out';
@@ -1700,9 +1698,10 @@ function _checkNewMovement(movs) {
   if (age > 5 * 60 * 1000) return;
 
   const pendingBalance = latest.balance ?? null;
-  const label = latest.type === 'transfer_in'
-    ? `Recibido de @${latest.note || 'usuario'}`
-    : 'Recarga acreditada';
+  const rawNote = latest.note || '';
+  const usernameMatch = rawNote.match(/@([\w.]+)/);
+  const sender = usernameMatch ? '@' + usernameMatch[1] : null;
+  const label = latest.type === 'transfer_in' ? sender : null;
 
   // Animar en la vista actual si es account, o al entrar a account
   function _triggerNotif() {
