@@ -915,11 +915,14 @@ const _notifSVGs = {
   pending: `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>`
 };
 
-function showCardNotif(type, amount, label) {
+function showCardNotif(type, amount, label, onComplete) {
   const el   = document.getElementById('acct-notif');
   const icon = document.getElementById('acct-notif-icon');
   const text = document.getElementById('acct-notif-text');
   if (!el) return;
+
+  // Store callback to fire after animation ends
+  el._onComplete = onComplete || null;
 
   const fmt = `$${parseFloat(amount).toFixed(2)}`;
 
@@ -928,8 +931,10 @@ function showCardNotif(type, amount, label) {
   if (type === 'in') {
     iconSvg = _notifSVGs.in;
     colorClass = 'notif-color-in';
-    phase1 = `Procesando transferencia...`;
-    phase2 = label ? `${label.replace(/^Recibido de /,'Recibido de ')} · <span class="notif-amt">${fmt}</span>` : `Recibido · <span class="notif-amt">+${fmt}</span>`;
+    // Extract sender from label "Recibido de @maria"
+    const sender = label ? label.replace(/^Recibido de /, '') : '';
+    phase1 = `Procesando pago...`;
+    phase2 = `Recibiendo <span class="notif-amt">${fmt}</span>${sender ? ' de ' + sender : ''}`;
   } else if (type === 'out') {
     iconSvg = _notifSVGs.out;
     colorClass = 'notif-color-out';
@@ -976,20 +981,27 @@ function showCardNotif(type, amount, label) {
   void el.offsetWidth;
   el.classList.add('notif-visible');
 
-  // Cycle every 2 seconds
+  // Cycle every 3 seconds
   el._cycleInterval = setInterval(() => {
     currentPhase = (currentPhase + 1) % 2;
     setPhase(currentPhase);
-  }, 2000);
+  }, 3000);
 
-  // Hide after 10 seconds
+  // Hide after 35 seconds, then fire optional callback
   _notifTimer = setTimeout(() => {
     clearInterval(el._cycleInterval);
     el._cycleInterval = null;
     el.classList.remove('notif-visible');
     el.classList.add('notif-exit');
-    setTimeout(() => { el.className = 'acct-notif'; text.className = 'acct-notif-text'; }, 450);
-  }, 10000);
+    setTimeout(() => {
+      el.className = 'acct-notif';
+      text.className = 'acct-notif-text';
+      if (typeof el._onComplete === 'function') {
+        el._onComplete();
+        el._onComplete = null;
+      }
+    }, 450);
+  }, 35000);
 }
 
 // TODO: cuando integres Mercado Pago, llama así al confirmar pago:
@@ -1388,11 +1400,10 @@ async function doTransfer() {
 
   renderAccountView();
 
-  // Notificación en tarjeta
-  showCardNotif('out', amount, `Enviado a @${username}`);
-
-  // Pantalla de éxito
-  showTransferSuccess(amount, username);
+  // Notificación en tarjeta — showTransferSuccess se dispara al terminar los 35s
+  showCardNotif('out', amount, `Enviado a @${username}`, () => {
+    showTransferSuccess(amount, username);
+  });
 }
 
 function showTransferSuccess(amount, username) {
@@ -1625,9 +1636,23 @@ async function loadAccountHistory() {
       const latest = newMovs[0];
       const isNew  = !prevMovs.some(m => m.id === latest.id);
       if (isNew && latest.type === 'transfer_in') {
-        showCardNotif('in', latest.amount, `Recibido de @${latest.note || 'usuario'}`);
+        // Guardamos el balance real pero NO lo mostramos aún —
+        // se acredita visualmente al terminar la animación de 35s
+        const pendingBalance = latest.balance ?? null;
+        showCardNotif('in', latest.amount, `Recibido de @${latest.note || 'usuario'}`, () => {
+          if (pendingBalance !== null && currentWallet) {
+            currentWallet.balance = pendingBalance;
+          }
+          syncBalanceUI();
+        });
       } else if (isNew && latest.type === 'topup') {
-        showCardNotif('in', latest.amount, 'Recarga acreditada');
+        const pendingBalance = latest.balance ?? null;
+        showCardNotif('in', latest.amount, 'Recarga acreditada', () => {
+          if (pendingBalance !== null && currentWallet) {
+            currentWallet.balance = pendingBalance;
+          }
+          syncBalanceUI();
+        });
       }
     }
   } else {
