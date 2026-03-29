@@ -1550,7 +1550,11 @@ function initAccountListeners() {
       // 1. Crear PaymentIntent en Supabase Edge Function
       const res = await fetch(`${SUPABASE_URL}/functions/v1/create-payment`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+          'apikey': SUPABASE_ANON_KEY,
+        },
         body: JSON.stringify({
           amount:  _depAmount,
           method:  _depMethod,
