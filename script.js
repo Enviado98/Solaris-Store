@@ -191,41 +191,43 @@ async function handleLogin(user) {
   }
   if (savedView === 'account' && cachedWallet && cachedProfile) {
     renderAccountView();
-  } else if (savedView === 'account') {
-    showAccountSkeleton();
   }
+  // Si no hay caché completo, simplemente no mostramos skeleton —
+  // los datos llegan en < 1s y renderAccountView se llama cuando ambos estén listos
+
   if (cachedProfile?.is_admin)
     document.getElementById('nav-admin-btn').classList.remove('hidden');
 
   // ── Cargar datos frescos en paralelo ──
   loadProducts(); // productos siempre frescos
 
-  fetchWallet(user.id).then(wallet => {
-    if (!wallet) return;
-    currentWallet = wallet;
-    CACHE.set('wallet_' + user.id, wallet);
-    syncBalanceUI();
-    if (savedView === 'account') renderAccountView();
-  });
-
-  fetchProfile(user.id).then(async profile => {
-    if (!profile) return;
-
+  // Wallet y perfil en paralelo — renderizar cuenta solo cuando AMBOS estén listos
+  Promise.all([
+    fetchWallet(user.id),
+    fetchProfile(user.id)
+  ]).then(async ([wallet, profile]) => {
     // ── Verificar bloqueo ──
-    if (profile.is_blocked) {
+    if (profile?.is_blocked) {
       await db.auth.signOut();
       handleLogout();
-      // Mostrar mensaje de bloqueo en el login
       setTimeout(() => {
         setMsg('auth-msg', 'Tu cuenta ha sido bloqueada. Contacta al soporte.', 'error');
       }, 300);
       return;
     }
 
-    currentProfile = profile;
-    CACHE.set('profile_' + user.id, profile);
-    if (profile?.is_admin)
-      document.getElementById('nav-admin-btn').classList.remove('hidden');
+    if (wallet) {
+      currentWallet = wallet;
+      CACHE.set('wallet_' + user.id, wallet);
+    }
+    if (profile) {
+      currentProfile = profile;
+      CACHE.set('profile_' + user.id, profile);
+      if (profile?.is_admin)
+        document.getElementById('nav-admin-btn').classList.remove('hidden');
+    }
+
+    syncBalanceUI();
     if (savedView === 'account') renderAccountView();
   });
 }
@@ -1400,9 +1402,19 @@ async function doTransfer() {
 
   renderAccountView();
 
-  // Notificación en tarjeta — showTransferSuccess se dispara al terminar los 35s
-  showCardNotif('out', amount, `Enviado a @${username}`, () => {
-    showTransferSuccess(amount, username);
+  // Asegurar que la vista account esté visible antes de animar la tarjeta.
+  // El #acct-notif vive dentro de .view que es display:none cuando no está activa,
+  // y las transiciones CSS no funcionan en elementos ocultos.
+  showView('account');
+
+  // Dos rAF: primero el browser aplica display, segundo ya puede calcular layout
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      // Notificación en tarjeta — showTransferSuccess se dispara al terminar los 35s
+      showCardNotif('out', amount, `Enviado a @${username}`, () => {
+        showTransferSuccess(amount, username);
+      });
+    });
   });
 }
 
@@ -1636,22 +1648,30 @@ async function loadAccountHistory() {
       const latest = newMovs[0];
       const isNew  = !prevMovs.some(m => m.id === latest.id);
       if (isNew && latest.type === 'transfer_in') {
-        // Guardamos el balance real pero NO lo mostramos aún —
-        // se acredita visualmente al terminar la animación de 35s
         const pendingBalance = latest.balance ?? null;
-        showCardNotif('in', latest.amount, `Recibido de @${latest.note || 'usuario'}`, () => {
-          if (pendingBalance !== null && currentWallet) {
-            currentWallet.balance = pendingBalance;
-          }
-          syncBalanceUI();
+        showView('account');
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => {
+            showCardNotif('in', latest.amount, `Recibido de @${latest.note || 'usuario'}`, () => {
+              if (pendingBalance !== null && currentWallet) {
+                currentWallet.balance = pendingBalance;
+              }
+              syncBalanceUI();
+            });
+          });
         });
       } else if (isNew && latest.type === 'topup') {
         const pendingBalance = latest.balance ?? null;
-        showCardNotif('in', latest.amount, 'Recarga acreditada', () => {
-          if (pendingBalance !== null && currentWallet) {
-            currentWallet.balance = pendingBalance;
-          }
-          syncBalanceUI();
+        showView('account');
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => {
+            showCardNotif('in', latest.amount, 'Recarga acreditada', () => {
+              if (pendingBalance !== null && currentWallet) {
+                currentWallet.balance = pendingBalance;
+              }
+              syncBalanceUI();
+            });
+          });
         });
       }
     }
@@ -1695,40 +1715,6 @@ function fmtDate(iso) {
 // ══════════════════════════════════════════════════
 //  SKELETON HELPERS
 // ══════════════════════════════════════════════════
-function _skelRow() {
-  return `<div class="skel-hist-row">
-    <div class="skel skel-hist-icon"></div>
-    <div class="skel-hist-body">
-      <div class="skel skel-hist-line1"></div>
-      <div class="skel skel-hist-line2"></div>
-    </div>
-    <div class="skel skel-hist-amt"></div>
-  </div>`;
-}
-
-function showAccountSkeleton() {
-  // Balance skeleton (dentro de la tarjeta dorada)
-  const balVal = document.getElementById('acct-balance-val');
-  if (balVal) balVal.innerHTML = '<span class="skel-balance-amount"></span>';
-
-  // Perfil skeleton
-  const profileCard = document.getElementById('acct-profile-card');
-  if (profileCard) {
-    profileCard.innerHTML = `
-      <div class="skel skel-avatar"></div>
-      <div class="acct-profile-info">
-        <div class="skel skel-username"></div>
-      </div>`;
-  }
-
-  // Historial skeleton
-  const skelRows = [_skelRow(), _skelRow(), _skelRow()].join('');
-  const compras = document.getElementById('acct-hist-compras');
-  const recargas = document.getElementById('acct-hist-recargas');
-  if (compras)  compras.innerHTML  = skelRows;
-  if (recargas) recargas.innerHTML = skelRows;
-}
-
 function showProductsSkeleton() {
   const grid = document.getElementById('products-grid');
   if (!grid) return;

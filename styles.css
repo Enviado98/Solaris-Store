@@ -2140,56 +2140,7 @@ textarea.input { resize: vertical; min-height: 80px; }
 }
 
 /* Balance card skeleton */
-.skel-balance-amount {
-  height: 42px;
-  width: 140px;
-  border-radius: 10px;
-  margin: 10px 0 8px;
-  background: linear-gradient(90deg,
-    rgba(255,255,255,0.15) 25%,
-    rgba(255,255,255,0.30) 50%,
-    rgba(255,255,255,0.15) 75%
-  );
-  background-size: 800px 100%;
-  animation: shimmer 1.4s infinite linear;
-  border-radius: 8px;
-  display: block;
-}
-.skel-balance-sub {
-  height: 14px;
-  width: 110px;
-  border-radius: 6px;
-  display: block;
-  background: linear-gradient(90deg,
-    rgba(255,255,255,0.10) 25%,
-    rgba(255,255,255,0.22) 50%,
-    rgba(255,255,255,0.10) 75%
-  );
-  background-size: 800px 100%;
-  animation: shimmer 1.4s infinite linear;
-}
-
-/* Profile skeleton */
-.skel-avatar {
-  width: 44px; height: 44px;
-  border-radius: 50%;
-  flex-shrink: 0;
-}
-.skel-username { height: 16px; width: 120px; border-radius: 6px; }
-
-/* History skeleton rows */
-.skel-hist-row {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 12px 0;
-  border-bottom: 1px solid var(--border);
-}
-.skel-hist-icon  { width: 36px; height: 36px; border-radius: 50%; flex-shrink: 0; }
-.skel-hist-body  { flex: 1; display: flex; flex-direction: column; gap: 6px; }
-.skel-hist-line1 { height: 13px; width: 65%; border-radius: 5px; }
-.skel-hist-line2 { height: 11px; width: 40%; border-radius: 5px; }
-.skel-hist-amt   { height: 14px; width: 48px; border-radius: 5px; }
+/* (removed — account data loads via Promise.all, no skeleton needed) */
 
 /* Product card skeleton */
 .skel-product-card {
