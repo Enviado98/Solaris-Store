@@ -274,6 +274,7 @@ function handleLogout() {
   cart = []; saveCart();
   if (_histPollInterval) { clearInterval(_histPollInterval); _histPollInterval = null; }
   _pendingNotif = null;
+  try { localStorage.removeItem(_notifStateKey()); } catch {}
   ['nav-balance','nav-logout-btn','nav-cart-btn','nav-admin-btn','nav-menu-btn','nav-account-btn','nav-balance-pill'].forEach(id =>
     document.getElementById(id)?.classList.add('hidden')
   );
@@ -927,13 +928,15 @@ const _notifSVGs = {
   pending: `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>`
 };
 
+const NOTIF_DURATION = 35000;
+const _notifStateKey = () => `solaris_notif_${currentUser?.id}`;
+
 function showCardNotif(type, amount, label, onComplete) {
   const el   = document.getElementById('acct-notif');
   const icon = document.getElementById('acct-notif-icon');
   const text = document.getElementById('acct-notif-text');
   if (!el) return;
 
-  // Store callback to fire after animation ends
   el._onComplete = onComplete || null;
 
   const fmt = `$${parseFloat(amount).toFixed(2)}`;
@@ -949,7 +952,6 @@ function showCardNotif(type, amount, label, onComplete) {
     iconSvg = _notifSVGs.out;
     colorClass = 'notif-color-out';
     phase1 = `Procesando transferencia...`;
-    // Extract username from label like "Enviado a @maria"
     const dest = label ? label.replace(/^Enviado a /, '') : '';
     phase2 = `Enviando <span class="notif-amt">${fmt}</span>${dest ? ' a ' + dest : ''}`;
   } else if (type === 'pending') {
@@ -959,16 +961,30 @@ function showCardNotif(type, amount, label, onComplete) {
     phase2 = `<span class="notif-amt">+${fmt}</span> · Se acreditará en breve`;
   }
 
+  // Persistir en localStorage para sobrevivir recargas
+  const startedAt = Date.now();
+  try {
+    localStorage.setItem(_notifStateKey(), JSON.stringify({
+      type, amount, label, startedAt,
+      hasCallback: !!onComplete
+    }));
+  } catch {}
+
+  _startNotifAnimation({ el, icon, text, iconSvg, colorClass, phase1, phase2, startedAt, elapsed: 0 });
+}
+
+function _startNotifAnimation({ el, icon, text, iconSvg, colorClass, phase1, phase2, startedAt, elapsed }) {
   icon.innerHTML = iconSvg;
   icon.className = `acct-notif-icon ${colorClass}`;
 
-  // Clear any previous cycle
   clearTimeout(_notifTimer);
   if (el._cycleInterval) { clearInterval(el._cycleInterval); el._cycleInterval = null; }
 
-  // Set up cycling text
-  let currentPhase = 0;
   const phases = [phase1, phase2];
+  const remaining = NOTIF_DURATION - elapsed;
+
+  // Calcular en qué fase estamos según el tiempo transcurrido
+  let currentPhase = Math.floor(elapsed / 3000) % 2;
 
   function setPhase(p) {
     text.classList.remove('notif-text-visible');
@@ -982,25 +998,31 @@ function showCardNotif(type, amount, label, onComplete) {
     }, 280);
   }
 
-  // Show first phase immediately
-  text.innerHTML = `<span class="notif-shimmer">${phases[0]}</span>`;
+  // Mostrar la fase correcta inmediatamente
+  text.innerHTML = `<span class="notif-shimmer">${phases[currentPhase]}</span>`;
   text.className = 'acct-notif-text notif-text-enter notif-text-visible';
 
-  // Show notification
   el.className = `acct-notif ${colorClass} notif-enter`;
   void el.offsetWidth;
   el.classList.add('notif-visible');
 
-  // Cycle every 3 seconds
-  el._cycleInterval = setInterval(() => {
+  // Tiempo hasta el siguiente cambio de fase
+  const timeInCurrentPhase = elapsed % 3000;
+  const msUntilNextPhase = 3000 - timeInCurrentPhase;
+
+  setTimeout(() => {
     currentPhase = (currentPhase + 1) % 2;
     setPhase(currentPhase);
-  }, 3000);
+    el._cycleInterval = setInterval(() => {
+      currentPhase = (currentPhase + 1) % 2;
+      setPhase(currentPhase);
+    }, 3000);
+  }, msUntilNextPhase);
 
-  // Hide after 35 seconds, then fire optional callback
+  // Ocultar al terminar el tiempo restante
   _notifTimer = setTimeout(() => {
-    clearInterval(el._cycleInterval);
-    el._cycleInterval = null;
+    if (el._cycleInterval) { clearInterval(el._cycleInterval); el._cycleInterval = null; }
+    try { localStorage.removeItem(_notifStateKey()); } catch {}
     el.classList.remove('notif-visible');
     el.classList.add('notif-exit');
     setTimeout(() => {
@@ -1011,7 +1033,49 @@ function showCardNotif(type, amount, label, onComplete) {
         el._onComplete = null;
       }
     }, 450);
-  }, 35000);
+  }, remaining);
+}
+
+// Llamar esto al entrar a la vista account — reanuda si hay animación activa
+function _resumeNotifIfActive(onComplete) {
+  try {
+    const raw = localStorage.getItem(_notifStateKey());
+    if (!raw) return false;
+    const state = JSON.parse(raw);
+    const elapsed = Date.now() - state.startedAt;
+    if (elapsed >= NOTIF_DURATION) {
+      localStorage.removeItem(_notifStateKey());
+      return false;
+    }
+
+    const el   = document.getElementById('acct-notif');
+    const icon = document.getElementById('acct-notif-icon');
+    const text = document.getElementById('acct-notif-text');
+    if (!el) return false;
+
+    const fmt = `$${parseFloat(state.amount).toFixed(2)}`;
+    let phase1, phase2, colorClass, iconSvg;
+
+    if (state.type === 'in') {
+      iconSvg = _notifSVGs.in; colorClass = 'notif-color-in';
+      phase1 = `Procesando pago...`;
+      phase2 = `Recibiendo <span class="notif-amt">${fmt}</span>${state.label ? ' de ' + state.label : ''}`;
+    } else if (state.type === 'out') {
+      iconSvg = _notifSVGs.out; colorClass = 'notif-color-out';
+      phase1 = `Procesando transferencia...`;
+      const dest = state.label ? state.label.replace(/^Enviado a /, '') : '';
+      phase2 = `Enviando <span class="notif-amt">${fmt}</span>${dest ? ' a ' + dest : ''}`;
+    } else if (state.type === 'pending') {
+      iconSvg = _notifSVGs.pending; colorClass = 'notif-color-pending';
+      phase1 = `Procesando pago...`;
+      phase2 = `<span class="notif-amt">+${fmt}</span> · Se acreditará en breve`;
+    }
+
+    el._onComplete = state.hasCallback ? onComplete : null;
+    _startNotifAnimation({ el, icon, text, iconSvg, colorClass, phase1, phase2,
+      startedAt: state.startedAt, elapsed });
+    return true;
+  } catch { return false; }
 }
 
 // TODO: cuando integres Mercado Pago, llama así al confirmar pago:
@@ -1171,6 +1235,13 @@ function renderAccountView() {
   });
 
   loadAccountHistory();
+
+  // Reanudar animación si se recargó dentro de los 35s
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      _resumeNotifIfActive();
+    });
+  });
 }
 
 // Reemplazar un elemento por clon para limpiar listeners
@@ -1667,15 +1738,32 @@ function _lastSeenKey() { return `solaris_last_mov_${currentUser?.id}`; }
 
 async function _pollMovements() {
   if (!currentUser) return;
+
+  // Solo pedir el registro más reciente — únicamente para saber si hubo cambio
   const { data, error } = await db.from('wallet_topups')
+    .select('id, created_at, type, amount, note, balance')
+    .eq('user_id', currentUser.id)
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .single();
+
+  if (error || !data) return;
+
+  const lastSeen = localStorage.getItem(_lastSeenKey()) || '';
+  if (data.id === lastSeen) return; // Nada nuevo
+
+  // Hay un movimiento nuevo — animar y refrescar historial completo
+  _checkNewMovement([data]);
+
+  const { data: full, error: err } = await db.from('wallet_topups')
     .select('*')
     .eq('user_id', currentUser.id)
     .order('created_at', { ascending: false })
-    .limit(5);
-  if (error || !data?.length) return;
-  _histCache.movs = data;
-  _checkNewMovement(data);
-  _renderHistory();
+    .limit(20);
+  if (!err && full) {
+    _histCache.movs = full;
+    _renderHistory();
+  }
 }
 
 function _checkNewMovement(movs) {
