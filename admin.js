@@ -106,28 +106,22 @@ async function loadStats() {
 let _allProducts = [];
 
 async function loadAdminProducts() {
-  const { data, error } = await db
-    .from('accounts').select('*')
+  const { data } = await db
+    .from('products').select('*')
     .order('expires_at', { ascending: true });
-
-  if (error) {
-    // fallback a products si accounts no existe aún
-    const { data: fallback } = await db.from('products').select('*').order('created_at', { ascending: false });
-    _allProducts = (fallback || []).map(p => ({ ...p, base_price: p.price, _legacy: true }));
-  } else {
-    _allProducts = data || [];
-  }
+  _allProducts = data || [];
   renderProducts();
 }
 
 function daysRemaining(expiresAt) {
-  if (!expiresAt) return 0;
+  if (!expiresAt) return null;
   return Math.max(0, Math.ceil((new Date(expiresAt) - Date.now()) / 86400000));
 }
-function calcPrice(basePrice, expiresAt) {
-  const days = daysRemaining(expiresAt);
+function calcPrice(p) {
+  if (!p.expires_at || !p.base_price) return parseFloat(p.price || 0);
+  const days = daysRemaining(p.expires_at);
   if (days <= 0) return 0;
-  return Math.round((days / 30) * parseFloat(basePrice) * 100) / 100;
+  return Math.round((days / 30) * parseFloat(p.base_price) * 100) / 100;
 }
 
 function renderProducts() {
@@ -148,18 +142,19 @@ function renderProducts() {
   }
 
   el.innerHTML = list.map(p => {
-    const days     = p._legacy ? (p.duration_days || 30) : daysRemaining(p.expires_at);
-    const dynPrice = p._legacy ? parseFloat(p.price) : calcPrice(p.base_price, p.expires_at);
-    const pct      = p._legacy ? 100 : Math.min(100, Math.round((days / 30) * 100));
+    const days     = daysRemaining(p.expires_at);
+    const dynPrice = calcPrice(p);
+    const hasDays  = days !== null;
+    const pct      = hasDays ? Math.min(100, Math.round((days / 30) * 100)) : 100;
     const barColor = pct > 60 ? '#22c55e' : pct > 30 ? '#f59e0b' : '#ef4444';
-    const expiryStr = p._legacy ? `${days}d` : `${days} días restantes`;
+    const expiryStr = hasDays ? `${days} días restantes` : `${p.duration_days || 30}d`;
     return `
     <div class="admin-item">
       <div class="admin-item-info">
         <div class="admin-item-name">
           ${CAT_EMOJI[p.category] || '⭐'} ${esc(p.name)}
           <span style="color:${barColor};margin-left:6px">$${price(dynPrice)}</span>
-          ${!p._legacy ? `<span style="color:var(--text-dim);font-size:0.75rem;margin-left:4px">(base $${price(p.base_price)}/30d)</span>` : ''}
+          ${hasDays ? `<span style="color:var(--text-dim);font-size:0.75rem;margin-left:4px">(base $${price(p.base_price)}/30d)</span>` : ''}
         </div>
         <div class="admin-item-meta">
           ${esc(p.category)} · ${expiryStr} · ${p.is_active ? '✅ Activo' : '❌ Inactivo'}
@@ -170,10 +165,10 @@ function renderProducts() {
         </div>
       </div>
       <div class="admin-item-actions">
-        <button class="btn-toggle" onclick="toggleProduct('${p.id}', ${p.is_active}, ${!!p._legacy})">
+        <button class="btn-toggle" onclick="toggleProduct('${p.id}', ${p.is_active})">
           ${p.is_active ? 'Desactivar' : 'Activar'}
         </button>
-        <button class="btn btn-danger" onclick="deleteProduct('${p.id}', '${esc(p.name)}', ${!!p._legacy})">
+        <button class="btn btn-danger" onclick="deleteProduct('${p.id}', '${esc(p.name)}')">
           Eliminar
         </button>
       </div>
@@ -181,29 +176,27 @@ function renderProducts() {
   }).join('');
 }
 
-async function toggleProduct(id, active, legacy = false) {
-  const table = legacy ? 'products' : 'accounts';
-  await db.from(table).update({ is_active: !active }).eq('id', id);
+async function toggleProduct(id, active) {
+  await db.from('products').update({ is_active: !active }).eq('id', id);
   await loadAdminProducts();
   loadStats();
 }
 
-async function deleteProduct(id, name, legacy = false) {
+async function deleteProduct(id, name) {
   showModal(`Eliminar "${name}"`,
-    `<p style="color:var(--text-dim);font-size:0.87rem;margin-bottom:16px">¿Confirmas que deseas eliminar esta cuenta? Esta acción no se puede deshacer.</p>
+    `<p style="color:var(--text-dim);font-size:0.87rem;margin-bottom:16px">¿Confirmas que deseas eliminar este producto? Esta acción no se puede deshacer.</p>
      <div class="modal-actions">
        <button class="btn btn-neutral" onclick="closeModal()">Cancelar</button>
-       <button class="btn btn-danger" onclick="confirmDelete('${id}', ${legacy})">Sí, eliminar</button>
+       <button class="btn btn-danger" onclick="confirmDelete('${id}')">Sí, eliminar</button>
      </div>`
   );
 }
 
-async function confirmDelete(id, legacy = false) {
-  const table = legacy ? 'products' : 'accounts';
-  const { error } = await db.from(table).delete().eq('id', id);
+async function confirmDelete(id) {
+  const { error } = await db.from('products').delete().eq('id', id);
   closeModal();
   if (error) { toast('Error al eliminar', 'error'); return; }
-  toast('Cuenta eliminada ✓');
+  toast('Producto eliminado ✓');
   loadAdminProducts();
   loadStats();
 }
@@ -225,11 +218,16 @@ async function addProduct() {
   const btn = document.getElementById('add-product-btn');
   btn.disabled = true; btn.textContent = 'Guardando…';
 
-  const { error } = await db.from('accounts').insert({
+  const expiresISO = new Date(expires).toISOString();
+  const days = Math.max(1, Math.ceil((new Date(expires) - Date.now()) / 86400000));
+
+  const { error } = await db.from('products').insert({
     name, category, service: service || null,
     description: desc || null,
     base_price: prc,
-    expires_at: new Date(expires).toISOString(),
+    price: Math.round((days / 30) * prc * 100) / 100,
+    duration_days: days,
+    expires_at: expiresISO,
     account_data: account || null,
     is_active: true,
   });

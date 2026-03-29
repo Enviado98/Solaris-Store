@@ -126,16 +126,15 @@ let currentCat     = 'all';
 let cart           = JSON.parse(localStorage.getItem('solaris_cart') || '[]');
 
 // ─── Precio proporcional por días restantes ─────
-function daysRemaining(expiresAt) {
-  if (!expiresAt) return 0;
-  const diff = new Date(expiresAt) - Date.now();
-  return Math.max(0, Math.ceil(diff / 86400000));
+function daysRemaining(p) {
+  if (!p.expires_at) return p.duration_days || 30;
+  return Math.max(0, Math.ceil((new Date(p.expires_at) - Date.now()) / 86400000));
 }
-function calcPrice(basePrice, expiresAt) {
-  const days = daysRemaining(expiresAt);
+function calcPrice(p) {
+  if (!p.expires_at || !p.base_price) return parseFloat(p.price || 0);
+  const days = daysRemaining(p);
   if (days <= 0) return 0;
-  const raw = (days / 30) * parseFloat(basePrice);
-  return Math.round(raw * 100) / 100;
+  return Math.round((days / 30) * parseFloat(p.base_price) * 100) / 100;
 }
 function daysLabel(days) {
   if (days <= 0) return 'Expirado';
@@ -559,30 +558,14 @@ function setupEvents() {
 //  PRODUCTS
 // ══════════════════════════════════════════════════
 async function loadProducts() {
-  // Mostrar skeleton solo si no hay productos en memoria
   if (!allProducts.length) showProductsSkeleton();
 
   const { data, error } = await db
-    .from('accounts').select('*')
+    .from('products').select('*')
     .eq('is_active', true)
-    .gt('expires_at', new Date().toISOString())
-    .order('expires_at', { ascending: true });
+    .order('expires_at', { ascending: true, nullsFirst: false });
 
-  if (error) {
-    // Fallback a tabla products si accounts no existe aún
-    const { data: fallback, error: e2 } = await db
-      .from('products').select('*').eq('is_active', true).order('created_at', { ascending: false });
-    if (e2) { console.error(e2); return; }
-    allProducts = (fallback || []).map(p => ({
-      ...p,
-      base_price: p.price,
-      expires_at: null,
-      _legacy: true,
-    }));
-    CACHE.set('products', allProducts);
-    renderProducts();
-    return;
-  }
+  if (error) { console.error(error); return; }
   allProducts = data || [];
   CACHE.set('products', allProducts);
   renderProducts();
@@ -626,7 +609,7 @@ function renderProducts() {
       : allProducts.filter(p => p.service === currentCat);
 
   if (!list.length) {
-    grid.innerHTML = '<div class="no-items">Sin cuentas disponibles</div>';
+    grid.innerHTML = '<div class="no-items">Sin productos disponibles</div>';
     return;
   }
 
@@ -637,9 +620,9 @@ function renderProducts() {
       ? `<span class="iconify product-svc-icon" data-icon="${svcIcon.icon}" style="color:${svcIcon.color}"></span>`
       : `<span class="iconify product-svc-icon" data-icon="${catStyle.icon}" style="color:${catStyle.accent}"></span>`;
 
-    const days     = p._legacy ? (p.duration_days || 30) : daysRemaining(p.expires_at);
-    const dynPrice = p._legacy ? parseFloat(p.price) : calcPrice(p.base_price, p.expires_at);
-    const pct      = p._legacy ? 100 : daysPercent(days);
+    const days     = daysRemaining(p);
+    const dynPrice = calcPrice(p);
+    const pct      = p.expires_at ? daysPercent(days) : 100;
     const barColor = pct > 60 ? '#22c55e' : pct > 30 ? '#f59e0b' : '#ef4444';
 
     return `
@@ -662,7 +645,7 @@ function renderProducts() {
         <div class="product-footer">
           <div class="product-price-block">
             <div class="product-price">$${price(dynPrice)}</div>
-            ${!p._legacy ? `<div class="product-days">Base $${price(p.base_price)}/30d</div>` : `<div class="product-days">${days}d</div>`}
+            ${p.base_price ? `<div class="product-days">Base $${price(p.base_price)}/30d</div>` : `<div class="product-days">${days}d</div>`}
           </div>
           <button class="btn-add-cart" onclick="addToCart('${p.id}')">+ Carrito</button>
         </div>
@@ -690,10 +673,7 @@ function saveCart() { localStorage.setItem('solaris_cart', JSON.stringify(cart))
 
 function renderCart() {
   const items = cart.map(c => allProducts.find(p => p.id === c.id)).filter(Boolean);
-  const total = items.reduce((s, p) => {
-    const dynP = p._legacy ? parseFloat(p.price) : calcPrice(p.base_price, p.expires_at);
-    return s + dynP;
-  }, 0);
+  const total = items.reduce((s, p) => s + calcPrice(p), 0);
   const balance = parseFloat(currentWallet?.balance || 0);
 
   const elItems   = document.getElementById('cart-items');
@@ -711,8 +691,8 @@ function renderCart() {
   elSummary.classList.remove('hidden');
 
   elItems.innerHTML = items.map(p => {
-    const days    = p._legacy ? (p.duration_days || 30) : daysRemaining(p.expires_at);
-    const dynPrice = p._legacy ? parseFloat(p.price) : calcPrice(p.base_price, p.expires_at);
+    const days     = daysRemaining(p);
+    const dynPrice = calcPrice(p);
     return `
     <div class="cart-item">
       <div class="cart-item-info">
@@ -741,10 +721,7 @@ function renderCart() {
 
 async function doCheckout() {
   const items   = cart.map(c => allProducts.find(p => p.id === c.id)).filter(Boolean);
-  const total   = items.reduce((s, p) => {
-    const dynP = p._legacy ? parseFloat(p.price) : calcPrice(p.base_price, p.expires_at);
-    return s + dynP;
-  }, 0);
+  const total   = items.reduce((s, p) => s + calcPrice(p), 0);
   const balance = parseFloat(currentWallet?.balance || 0);
 
   if (balance < total) return toast('Saldo insuficiente', 'error');
