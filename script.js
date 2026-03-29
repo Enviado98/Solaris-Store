@@ -863,7 +863,7 @@ async function loadAdminUsers() {
 
 function openCreditModal(userId, userName) {
   showModal(`Agregar crédito a ${userName}`,
-    `<input type="number" id="credit-amount" placeholder="Monto en USD" class="input" step="0.01" min="0.01">
+    `<input type="number" id="credit-amount" placeholder="Monto en MXN" class="input" step="0.01" min="0.01">
      <input type="text"   id="credit-note"   placeholder="Nota (ej: Pago WA #12)" class="input">
      <button class="btn-primary" onclick="addCredit('${userId}')">Confirmar</button>`
   );
@@ -1171,7 +1171,7 @@ function syncCartCount() {
 
 // ─── Tiny utils ────────────────────────────────
 function val(id)         { return document.getElementById(id)?.value.trim() || ''; }
-function price(n)        { return parseFloat(n||0).toFixed(2); }
+function price(n)        { return parseFloat(n||0).toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
 function esc(str)        { return String(str||'').replace(/[<>"'&]/g,c=>({'<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;','&':'&amp;'}[c])); }
 function sleep(ms)       { return new Promise(r => setTimeout(r, ms)); }
 function fadeOut(el)     { el.style.cssText += 'opacity:0;transition:opacity 0.4s'; }
