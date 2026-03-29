@@ -1433,6 +1433,74 @@ textarea.input { resize: vertical; min-height: 80px; }
   letter-spacing: 0.05em;
 }
 
+
+/* ── Ticker de recargas en la tarjeta ─────────────────── */
+.acct-ticker-wrap {
+  margin: 12px 0 4px;
+  overflow: hidden;
+  border-radius: 8px;
+  background: rgba(0,0,0,0.18);
+  border: 1px solid rgba(255,255,255,0.1);
+  height: 32px;
+  position: relative;
+  display: none; /* se muestra solo cuando hay items */
+}
+.acct-ticker-wrap.has-items {
+  display: block;
+}
+.acct-ticker-track {
+  display: flex;
+  align-items: center;
+  height: 100%;
+  gap: 0;
+  animation: ticker-scroll 18s linear infinite;
+  white-space: nowrap;
+  width: max-content;
+}
+.acct-ticker-track:hover {
+  animation-play-state: paused;
+}
+@keyframes ticker-scroll {
+  0%   { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+.acct-ticker-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 18px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: rgba(255,255,255,0.9);
+  letter-spacing: 0.03em;
+  border-right: 1px solid rgba(255,255,255,0.1);
+  height: 100%;
+}
+.acct-ticker-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #4ade80;
+  box-shadow: 0 0 6px #4ade80;
+  animation: ticker-pulse 1.5s ease-in-out infinite;
+  flex-shrink: 0;
+}
+.acct-ticker-dot.pending {
+  background: #fbbf24;
+  box-shadow: 0 0 6px #fbbf24;
+}
+@keyframes ticker-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%       { opacity: 0.4; transform: scale(0.7); }
+}
+.acct-ticker-amount {
+  color: #4ade80;
+  font-weight: 700;
+}
+.acct-ticker-amount.pending {
+  color: #fbbf24;
+}
+
 /* Sections */
 .acct-section {
   background: var(--bg2);

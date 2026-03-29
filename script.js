@@ -688,38 +688,29 @@ async function doCheckout() {
   btn.disabled = true; btn.textContent = 'Procesando…';
 
   try {
-    // 1. Deducir saldo
-    const newBalance = balance - total;
-    const { error: wErr } = await db.from('wallets')
-      .update({ balance: newBalance, updated_at: new Date().toISOString() })
-      .eq('user_id', currentUser.id);
-    if (wErr) throw wErr;
+    // Procesar compra via RPC segura — precio y descuento ocurren en la base de datos
+    const productIds = items.map(p => p.id);
+    const { data, error } = await db.rpc('process_purchase', { p_product_ids: productIds });
+    if (error) throw error;
 
-    // 2. Registrar órdenes
-    const accounts = [];
-    for (const p of items) {
-      await db.from('orders').insert({
-        user_id: currentUser.id, product_id: p.id,
-        amount_paid: p.price, status: 'completed'
-      });
-      if (p.account_data) accounts.push({ name: p.name, data: p.account_data });
-    }
+    // Actualizar saldo local con el total real devuelto por la RPC
+    const totalReal = parseFloat(data?.total || total);
+    currentWallet.balance = balance - totalReal;
+    syncBalanceUI();
 
-    // 3. Actualizar estado local
-    currentWallet.balance = newBalance;
-    cart = []; saveCart(); syncBalanceUI(); syncCartCount();
-    invalidateHistoryCache(); // la compra aparecerá en el historial en la próxima visita
-
-    // 4. Mostrar credenciales (si las tiene)
+    // Mostrar credenciales (si las tiene)
+    const accounts = items.filter(p => p.account_data).map(p => ({ name: p.name, data: p.account_data }));
     const accountsHTML = accounts.length
       ? accounts.map(a => `<b>${esc(a.name)}</b><code>${esc(a.data)}</code>`).join('')
       : `<p>Recibirás los datos de acceso por WhatsApp. Si tienes dudas, contáctanos.</p>`;
 
+    cart = []; saveCart(); syncCartCount();
+    invalidateHistoryCache();
     showModal('¡Compra exitosa! 🎉', accountsHTML);
     renderCart();
   } catch (err) {
     console.error(err);
-    toast('Error al procesar. Intenta de nuevo.', 'error');
+    toast(err.message || 'Error al procesar. Intenta de nuevo.', 'error');
     btn.disabled = false; btn.textContent = 'Confirmar compra';
   }
 }
@@ -854,6 +845,7 @@ function showView(name) {
   moveBottomSlider(name);
   sessionStorage.setItem('solaris_view', name);
   if (name === 'cart') renderCart();
+  if (name === 'account') initTicker();
   if (name === 'catalog') {
     document.querySelector('.store-layout')?.classList.remove('hidden');
     document.getElementById('products-panel')?.classList.add('hidden');
@@ -903,6 +895,58 @@ function toast(msg, type = '') {
   el.className = `show ${type}`;
   clearTimeout(_toastTimer);
   _toastTimer = setTimeout(() => { el.className = ''; }, 3000);
+}
+
+
+// ══════════════════════════════════════════════════
+//  TICKER DE RECARGAS — tarjeta de saldo
+// ══════════════════════════════════════════════════
+
+// Datos demo — reemplazar con datos reales de Supabase cuando esté Mercado Pago
+const _tickerDemo = [
+  { amount: 5.00,  label: 'Recarga',     pending: false },
+  { amount: 10.00, label: 'Recarga',     pending: false },
+  { amount: 2.50,  label: 'Recarga',     pending: true  },
+  { amount: 20.00, label: 'Recarga',     pending: false },
+  { amount: 7.00,  label: 'Recarga',     pending: true  },
+];
+
+// Función principal — llama con array de { amount, label, pending }
+// Cuando tengas Mercado Pago, reemplaza _tickerDemo con datos reales
+function renderTicker(items) {
+  const wrap  = document.getElementById('acct-ticker-wrap');
+  const track = document.getElementById('acct-ticker-track');
+  if (!wrap || !track) return;
+
+  if (!items || items.length === 0) {
+    wrap.classList.remove('has-items');
+    return;
+  }
+
+  wrap.classList.add('has-items');
+
+  // Duplicar items para loop infinito suave
+  const all = [...items, ...items];
+
+  track.innerHTML = all.map(t => `
+    <div class="acct-ticker-item">
+      <span class="acct-ticker-dot ${t.pending ? 'pending' : ''}"></span>
+      <span>${t.pending ? '⏳' : '✅'} ${t.label}
+        <span class="acct-ticker-amount ${t.pending ? 'pending' : ''}">
+          +$${parseFloat(t.amount).toFixed(2)}
+        </span>
+        ${t.pending ? '· En proceso…' : '· Acreditado'}
+      </span>
+    </div>
+  `).join('');
+}
+
+// Mostrar demo al cargar la vista de cuenta
+// TODO: reemplazar con llamada real a Supabase cuando esté Mercado Pago:
+// const { data } = await db.from('wallet_topups').select('*').eq('user_id', currentUser.id).limit(5);
+// renderTicker(data.map(t => ({ amount: t.amount, label: 'Recarga', pending: t.status === 'pending' })));
+function initTicker() {
+  renderTicker(_tickerDemo);
 }
 
 function syncBalanceUI() {
