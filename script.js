@@ -706,7 +706,6 @@ function setupEvents() {
   document.querySelectorAll('.svc-chip').forEach(chip =>
     chip.addEventListener('click', (e) => {
       e.stopPropagation();
-      if (window._triggerLogoPulse) window._triggerLogoPulse();
       currentCat = chip.dataset.cat;
       const label = SVC_CAT_LABEL[currentCat] || currentCat;
       document.getElementById('products-panel-title').textContent = chip.textContent.trim();
@@ -718,7 +717,6 @@ function setupEvents() {
   document.querySelectorAll('.cat-card-cta').forEach(btn =>
     btn.addEventListener('click', e => {
       e.stopPropagation();
-      if (window._triggerLogoPulse) window._triggerLogoPulse();
       const catMap = {
         'Streaming': { cat: 'Streaming', title: '📺 Streaming' },
         'Musica':    { cat: 'Musica',    title: '🎵 Música' },
@@ -1508,53 +1506,7 @@ function friendlyError(msg) {
   return msg;
 }
 
-// ─── Logo pulse on card tap (no scroll rotation) ───
-(function () {
-  let pulsing = false;
-
-  const logoSvg = () => document.querySelector('.nav-logo svg');
-
-  function triggerPulse() {
-    const el = logoSvg();
-    if (!el || pulsing) return;
-    pulsing = true;
-    el.classList.remove('logo-pulse');
-    void el.offsetWidth;
-    el.classList.add('logo-pulse');
-    setTimeout(() => {
-      el.classList.remove('logo-pulse');
-      pulsing = false;
-    }, 460);
-  }
-
-  // Expose for card tap usage
-  window._triggerLogoPulse = triggerPulse;
-})();
-
-// ─── SOLARIS wave animation every 17s ───────────────
-(function () {
-  const INTERVAL_MS = 17000;
-  const LETTER_DELAY = 140; // ms between each letter — smooth wave flow
-
-  function runWave() {
-    const letters = document.querySelectorAll('.solaris-brand span');
-    if (!letters.length) return;
-    letters.forEach((span, i) => {
-      setTimeout(() => {
-        span.classList.remove('wave-pop');
-        void span.offsetWidth;
-        span.classList.add('wave-pop');
-        setTimeout(() => span.classList.remove('wave-pop'), 400);
-      }, i * LETTER_DELAY);
-    });
-  }
-
-  // Start after a short initial delay, then every 17s
-  setTimeout(() => {
-    runWave();
-    setInterval(runWave, INTERVAL_MS);
-  }, 3000);
-})();
+// Logo y letras estáticos — sin animación
 
 
 // ══════════════════════════════════════════════════
