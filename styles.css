@@ -2261,73 +2261,153 @@ textarea.input { resize: vertical; min-height: 80px; }
 .skel-prod-price  { height: 20px; width: 50px; border-radius: 6px; margin-top: 4px; }
 
 /* ═══════════════════════════════════════════════
-   STRIPE DEPOSIT MODAL
+   DEPOSIT MODAL — Pasarela profesional
    ═══════════════════════════════════════════════ */
-.dep-wrap {
+
+/* ── Paso 1: Selección de método ─────────────── */
+.dep-step { display: flex; flex-direction: column; gap: 0; }
+.dep-step-title {
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  margin-bottom: 10px;
+}
+
+/* Tarjetas de método de pago */
+.dep-method-grid {
   display: flex;
   flex-direction: column;
-  gap: 14px;
-  padding: 4px 0;
+  gap: 10px;
 }
-.dep-methods {
+.dep-method-card {
   display: flex;
-  gap: 8px;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 16px;
+  border-radius: 14px;
+  border: 1.5px solid var(--border);
+  background: var(--bg);
+  cursor: pointer;
+  transition: border-color .2s, background .2s, box-shadow .2s;
+  text-align: left;
+  width: 100%;
+  position: relative;
+  overflow: hidden;
 }
-.dep-method-btn {
-  flex: 1;
+.dep-method-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  transition: opacity .2s;
+  background: linear-gradient(135deg, rgba(194,122,0,0.04), rgba(194,122,0,0.01));
+}
+.dep-method-card:hover { border-color: rgba(194,122,0,0.35); }
+.dep-method-card:hover::before { opacity: 1; }
+.dep-method-card.active {
+  border-color: var(--gold);
+  background: var(--bg2);
+  box-shadow: 0 0 0 3px rgba(194,122,0,0.10);
+}
+.dep-method-card.active::before { opacity: 1; }
+
+.dep-method-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: var(--bg2);
+  border: 1px solid var(--border);
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 6px;
-  padding: 10px;
-  border-radius: 10px;
-  border: 1.5px solid var(--border);
-  background: var(--bg2);
+  flex-shrink: 0;
+  font-size: 1.35rem;
+  transition: background .2s, border-color .2s;
+}
+.dep-method-card.active .dep-method-icon {
+  background: rgba(194,122,0,0.10);
+  border-color: rgba(194,122,0,0.25);
+}
+.dep-method-info { flex: 1; }
+.dep-method-name {
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 2px;
+}
+.dep-method-desc {
+  font-size: 0.75rem;
   color: var(--text-dim);
-  font-size: 0.9rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all .2s;
+  line-height: 1.4;
 }
-.dep-method-btn.active {
-  border-color: #a78bfa;
-  background: rgba(167,139,250,.12);
-  color: #a78bfa;
-}
-.dep-amounts {
+.dep-method-check {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 1.5px solid var(--border);
   display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: all .2s;
+  background: var(--bg);
+}
+.dep-method-card.active .dep-method-check {
+  background: var(--gold);
+  border-color: var(--gold);
+}
+.dep-method-check svg { opacity: 0; transition: opacity .15s; }
+.dep-method-card.active .dep-method-check svg { opacity: 1; }
+
+/* ── Separador visual ────────────────────────── */
+.dep-divider {
+  height: 1px;
+  background: var(--border);
+  margin: 16px 0;
+}
+
+/* ── Montos ──────────────────────────────────── */
+.dep-amounts {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
   gap: 8px;
-  flex-wrap: wrap;
+  margin-bottom: 10px;
 }
 .dep-amt-btn {
-  flex: 1;
-  min-width: 60px;
-  padding: 9px 4px;
+  padding: 10px 4px;
   border-radius: 10px;
   border: 1.5px solid var(--border);
-  background: var(--bg2);
+  background: var(--bg);
   color: var(--text);
-  font-size: 0.9rem;
-  font-weight: 600;
+  font-size: 0.88rem;
+  font-weight: 700;
   cursor: pointer;
-  transition: all .2s;
+  transition: all .18s;
+  text-align: center;
 }
+.dep-amt-btn:hover { border-color: rgba(194,122,0,0.4); color: var(--gold); }
 .dep-amt-btn.active {
-  border-color: #a78bfa;
-  background: rgba(167,139,250,.15);
-  color: #a78bfa;
+  border-color: var(--gold);
+  background: rgba(194,122,0,0.08);
+  color: var(--gold);
+  box-shadow: 0 0 0 2px rgba(194,122,0,0.12);
 }
+
 .dep-custom-wrap {
   display: flex;
   align-items: center;
-  gap: 6px;
-  background: var(--bg2);
+  gap: 8px;
+  background: var(--bg);
   border: 1.5px solid var(--border);
   border-radius: 10px;
-  padding: 0 12px;
+  padding: 0 14px;
+  transition: border-color .2s;
 }
-.dep-currency { color: var(--text-dim); font-size: 0.95rem; }
-.dep-currency-label { color: var(--text-dim); font-size: 0.8rem; }
+.dep-custom-wrap:focus-within { border-color: rgba(194,122,0,0.5); }
+.dep-currency { color: var(--text-dim); font-size: 0.9rem; font-weight: 600; }
+.dep-currency-label { color: var(--text-dim); font-size: 0.75rem; font-weight: 600; letter-spacing: 0.05em; }
 .dep-custom-input {
   flex: 1;
   background: transparent;
@@ -2335,70 +2415,185 @@ textarea.input { resize: vertical; min-height: 80px; }
   outline: none;
   color: var(--text);
   font-size: 0.95rem;
-  padding: 10px 0;
+  font-weight: 600;
+  padding: 11px 0;
 }
+.dep-custom-input::placeholder { color: var(--text-dim); font-weight: 400; }
+
+/* ── Formulario de pago ──────────────────────── */
+.dep-form-section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  animation: depFadeIn .25s ease;
+}
+@keyframes depFadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+
+.dep-field-label {
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  margin-bottom: 6px;
+  display: block;
+}
+
 #dep-stripe-card {
   background: var(--bg2);
   border: 1.5px solid var(--border);
-  border-radius: 10px;
-  padding: 12px 14px;
-  transition: border-color .2s;
+  border-radius: 12px;
+  padding: 14px 16px;
+  transition: border-color .2s, box-shadow .2s;
 }
 #dep-stripe-card:focus-within {
-  border-color: #a78bfa;
+  border-color: rgba(194,122,0,0.5);
+  box-shadow: 0 0 0 3px rgba(194,122,0,0.08);
 }
-.dep-oxxo-info {
+
+/* OXXO info */
+.dep-oxxo-wrap {
   background: var(--bg2);
   border: 1.5px solid var(--border);
-  border-radius: 10px;
-  padding: 14px;
-  font-size: 0.85rem;
+  border-radius: 14px;
+  padding: 18px 16px;
+  animation: depFadeIn .25s ease;
+}
+.dep-oxxo-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+.dep-oxxo-logo {
+  font-size: 1.6rem;
+  line-height: 1;
+}
+.dep-oxxo-title {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--text);
+}
+.dep-oxxo-subtitle {
+  font-size: 0.72rem;
   color: var(--text-dim);
-  line-height: 1.7;
-  text-align: center;
-  margin: 0;
 }
+.dep-oxxo-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.dep-oxxo-step {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 0.8rem;
+  color: var(--text-dim);
+  line-height: 1.4;
+}
+.dep-oxxo-num {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: rgba(194,122,0,0.12);
+  color: var(--gold);
+  font-size: 0.7rem;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+.dep-oxxo-note {
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border);
+  font-size: 0.72rem;
+  color: var(--text-dim);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* ── Error ───────────────────────────────────── */
 .dep-error {
-  background: rgba(239,68,68,.1);
-  border: 1px solid rgba(239,68,68,.3);
-  border-radius: 8px;
-  padding: 10px 12px;
-  font-size: 0.83rem;
-  color: #f87171;
+  background: rgba(239,68,68,.06);
+  border: 1px solid rgba(239,68,68,.2);
+  border-radius: 10px;
+  padding: 10px 14px;
+  font-size: 0.82rem;
+  color: #dc2626;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
+
+/* ── Botón pagar ─────────────────────────────── */
 .dep-pay-btn {
   width: 100%;
-  padding: 13px;
-  border-radius: 12px;
+  padding: 15px;
+  border-radius: 13px;
   border: none;
-  background: linear-gradient(135deg, #7c3aed, #a78bfa);
+  background: linear-gradient(135deg, #b86e00, #e09500, #c27a00);
+  background-size: 200% 100%;
+  background-position: 0% 0%;
   color: #fff;
-  font-size: 1rem;
-  font-weight: 700;
+  font-size: 0.97rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
   cursor: pointer;
-  transition: opacity .2s, transform .1s;
+  transition: background-position .3s, transform .1s, box-shadow .2s, opacity .2s;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
+  box-shadow: 0 4px 18px rgba(194,122,0,0.30);
 }
-.dep-pay-btn:hover { opacity: .9; }
+.dep-pay-btn:hover {
+  background-position: 100% 0%;
+  box-shadow: 0 6px 24px rgba(194,122,0,0.40);
+}
 .dep-pay-btn:active { transform: scale(.98); }
-.dep-pay-btn:disabled { opacity: .6; cursor: not-allowed; }
-.dep-secure {
-  text-align: center;
-  font-size: 0.75rem;
-  color: var(--text-dim);
-  opacity: .7;
-  margin: 0;
+.dep-pay-btn:disabled {
+  opacity: .55;
+  cursor: not-allowed;
+  box-shadow: none;
 }
+
+/* ── Pie del modal ───────────────────────────── */
+.dep-footer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font-size: 0.71rem;
+  color: var(--text-dim);
+  opacity: .75;
+}
+.dep-footer-badges {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.dep-badge {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.68rem;
+  color: var(--text-dim);
+  font-weight: 500;
+}
+
+/* ── Spinner ─────────────────────────────────── */
 .dep-spinner {
   width: 16px;
   height: 16px;
   border: 2px solid rgba(255,255,255,.3);
   border-top-color: #fff;
   border-radius: 50%;
-  animation: dep-spin .7s linear infinite;
+  animation: dep-spin .65s linear infinite;
   display: inline-block;
+  flex-shrink: 0;
 }
 @keyframes dep-spin { to { transform: rotate(360deg); } }
