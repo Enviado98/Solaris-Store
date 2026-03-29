@@ -899,54 +899,56 @@ function toast(msg, type = '') {
 
 
 // ══════════════════════════════════════════════════
-//  TICKER DE RECARGAS — tarjeta de saldo
+//  NOTIFICACIÓN DE MOVIMIENTO — tarjeta de saldo
 // ══════════════════════════════════════════════════
+let _notifTimer = null;
 
-// Datos demo — reemplazar con datos reales de Supabase cuando esté Mercado Pago
-const _tickerDemo = [
-  { amount: 5.00,  label: 'Recarga',     pending: false },
-  { amount: 10.00, label: 'Recarga',     pending: false },
-  { amount: 2.50,  label: 'Recarga',     pending: true  },
-  { amount: 20.00, label: 'Recarga',     pending: false },
-  { amount: 7.00,  label: 'Recarga',     pending: true  },
-];
+/**
+ * Muestra una notificación en la tarjeta dorada.
+ * type: 'in' | 'out' | 'pending'
+ * Llamar con datos reales cuando llegue Mercado Pago.
+ */
+function showCardNotif(type, amount, label) {
+  const el   = document.getElementById('acct-notif');
+  const icon = document.getElementById('acct-notif-icon');
+  const text = document.getElementById('acct-notif-text');
+  if (!el) return;
 
-// Función principal — llama con array de { amount, label, pending }
-// Cuando tengas Mercado Pago, reemplaza _tickerDemo con datos reales
-function renderTicker(items) {
-  const wrap  = document.getElementById('acct-ticker-wrap');
-  const track = document.getElementById('acct-ticker-track');
-  if (!wrap || !track) return;
-
-  if (!items || items.length === 0) {
-    wrap.classList.remove('has-items');
-    return;
+  // Configurar contenido según tipo
+  if (type === 'in') {
+    icon.textContent = '⬇️';
+    text.innerHTML = `<span style="color:#4ade80;font-weight:700">+$${parseFloat(amount).toFixed(2)}</span> ${label || 'Recarga'} · Acreditado`;
+  } else if (type === 'out') {
+    icon.textContent = '⬆️';
+    text.innerHTML = `<span style="color:#f87171;font-weight:700">-$${parseFloat(amount).toFixed(2)}</span> ${label || 'Enviado'}`;
+  } else if (type === 'pending') {
+    icon.textContent = '⏳';
+    text.innerHTML = `<span style="color:#fbbf24;font-weight:700">+$${parseFloat(amount).toFixed(2)}</span> ${label || 'Recarga'} · Se acreditará en breve…`;
   }
 
-  wrap.classList.add('has-items');
+  // Limpiar timer anterior
+  clearTimeout(_notifTimer);
+  el.className = 'acct-notif notif-enter';
 
-  // Duplicar items para loop infinito suave
-  const all = [...items, ...items];
+  // Forzar reflow para que la transición funcione
+  void el.offsetWidth;
+  el.classList.add('notif-visible');
 
-  track.innerHTML = all.map(t => `
-    <div class="acct-ticker-item">
-      <span class="acct-ticker-dot ${t.pending ? 'pending' : ''}"></span>
-      <span>${t.pending ? '⏳' : '✅'} ${t.label}
-        <span class="acct-ticker-amount ${t.pending ? 'pending' : ''}">
-          +$${parseFloat(t.amount).toFixed(2)}
-        </span>
-        ${t.pending ? '· En proceso…' : '· Acreditado'}
-      </span>
-    </div>
-  `).join('');
+  // Auto-ocultar después de 4 segundos
+  _notifTimer = setTimeout(() => {
+    el.classList.remove('notif-visible');
+    el.classList.add('notif-exit');
+    setTimeout(() => { el.className = 'acct-notif'; }, 450);
+  }, 4000);
 }
 
-// Mostrar demo al cargar la vista de cuenta
-// TODO: reemplazar con llamada real a Supabase cuando esté Mercado Pago:
-// const { data } = await db.from('wallet_topups').select('*').eq('user_id', currentUser.id).limit(5);
-// renderTicker(data.map(t => ({ amount: t.amount, label: 'Recarga', pending: t.status === 'pending' })));
+// TODO: cuando integres Mercado Pago, llama así al confirmar pago:
+// showCardNotif('pending', monto, 'Recarga');
+// Y cuando el webhook confirme:
+// showCardNotif('in', monto, 'Recarga');
+
 function initTicker() {
-  renderTicker(_tickerDemo);
+  // Reservado para datos reales — no muestra nada hasta que haya un movimiento real
 }
 
 function syncBalanceUI() {
@@ -1325,17 +1327,47 @@ async function doTransfer() {
   // Actualizar balance local
   currentWallet.balance = data.balance;
   syncBalanceUI();
-  invalidateHistoryCache(); // la transferencia aparecerá en movimientos
-  toast(`✓ Enviaste $${amount.toFixed(2)} a @${username}`);
+  invalidateHistoryCache();
 
   // Limpiar panel
   document.getElementById('acct-transfer-panel').classList.remove('open');
-    document.getElementById('acct-transfer-trigger')?.classList.remove('active');
+  document.getElementById('acct-transfer-trigger')?.classList.remove('active');
   document.getElementById('tr-username').value = '';
   document.getElementById('tr-amount').value   = '';
   fb.textContent = ''; fb.className = 'acct-user-feedback';
 
   renderAccountView();
+
+  // Notificación en tarjeta
+  showCardNotif('out', amount, `Enviado a @${username}`);
+
+  // Pantalla de éxito
+  showTransferSuccess(amount, username);
+}
+
+function showTransferSuccess(amount, username) {
+  const overlay = document.createElement('div');
+  overlay.className = 'transfer-success-overlay';
+  overlay.innerHTML = `
+    <div class="transfer-success-card">
+      <div class="transfer-success-icon">
+        <svg width="36" height="36" viewBox="0 0 24 24" fill="none"
+          stroke="#fff" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="20 6 9 17 4 12"/>
+        </svg>
+      </div>
+      <div class="transfer-success-title">¡Transferencia exitosa!</div>
+      <div class="transfer-success-amount">$${parseFloat(amount).toFixed(2)}</div>
+      <div class="transfer-success-to">enviado a @${username}</div>
+      <button class="transfer-success-btn" onclick="this.closest('.transfer-success-overlay').remove()">
+        Listo
+      </button>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+
+  // Auto-cerrar si no toca nada en 6 segundos
+  setTimeout(() => overlay.remove(), 6000);
 }
 
 async function doSaveProfile() {
@@ -1534,7 +1566,20 @@ async function loadAccountHistory() {
   }
 
   if (movsResult.status === 'fulfilled' && !movsResult.value.error) {
-    _histCache.movs = movsResult.value.data || [];
+    const prevMovs  = _histCache.movs;
+    const newMovs   = movsResult.value.data || [];
+    _histCache.movs = newMovs;
+
+    // Si había caché anterior, detectar movimiento nuevo y notificar en tarjeta
+    if (prevMovs !== null && newMovs.length > 0) {
+      const latest = newMovs[0];
+      const isNew  = !prevMovs.some(m => m.id === latest.id);
+      if (isNew && latest.type === 'transfer_in') {
+        showCardNotif('in', latest.amount, `Recibido de @${latest.note || 'usuario'}`);
+      } else if (isNew && latest.type === 'topup') {
+        showCardNotif('in', latest.amount, 'Recarga acreditada');
+      }
+    }
   } else {
     _histCache.movs = [];
   }
