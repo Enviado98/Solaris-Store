@@ -870,7 +870,7 @@ function renderCart() {
     <div class="cart-item">
       <div class="cart-item-info">
         <div class="cart-item-name">${esc(p.name)}</div>
-        <div class="cart-item-sub">${p.category} · ${days} días</div>
+        <div class="cart-item-sub">${esc(p.category)} · ${days} días</div>
       </div>
       <div class="cart-item-price">$${price(dynPrice)}</div>
       <button class="btn-remove" onclick="removeFromCart('${p.id}')" title="Quitar">✕</button>
@@ -960,7 +960,7 @@ function renderAdminProductsList(data, legacy) {
     <div class="admin-item">
       <div class="admin-item-info">
         <div class="admin-item-name">${CAT_EMOJI[p.category]||'⭐'} ${esc(p.name)} — <span style="color:${barColor}">$${price(dynPrice)}</span></div>
-        <div class="admin-item-meta">${p.category} · ${expiryStr} · ${p.is_active ? '✅ Activo' : '❌ Inactivo'}</div>
+        <div class="admin-item-meta">${esc(p.category)} · ${expiryStr} · ${p.is_active ? '✅ Activo' : '❌ Inactivo'}</div>
         <div style="margin-top:4px;height:4px;background:#eee;border-radius:2px;overflow:hidden">
           <div style="height:100%;width:${pct}%;background:${barColor};border-radius:2px;transition:width 0.4s"></div>
         </div>
@@ -1044,28 +1044,34 @@ function openCreditModal(userId, userName) {
 
 async function addCredit(userId) {
   const amount = parseFloat(document.getElementById('credit-amount')?.value || 0);
-  const note   = document.getElementById('credit-note')?.value || '';
+  const note   = (document.getElementById('credit-note')?.value || '').trim();
+
   if (!amount || amount <= 0) return toast('Monto inválido', 'error');
 
-  const { data: w } = await db.from('wallets').select('balance').eq('user_id', userId).single();
-  const newBal = parseFloat(w?.balance || 0) + amount;
+  const btn = document.querySelector('#modal-content .btn-primary');
+  if (btn) { btn.disabled = true; btn.textContent = 'Guardando...'; }
 
-  const { error } = await db.from('wallets')
-    .update({ balance: newBal, updated_at: new Date().toISOString() })
-    .eq('user_id', userId);
+  const { data, error } = await db.rpc('admin_add_credit', {
+    p_user_id: userId,
+    p_amount:  amount,
+    p_note:    note,
+  });
 
-  if (error) return toast('Error al agregar crédito', 'error');
+  if (btn) { btn.disabled = false; btn.textContent = 'Confirmar'; }
 
-  await db.from('credit_logs').insert({ user_id: userId, amount, type: 'add', note });
+  if (error || data?.error) {
+    toast(data?.error || 'Error al agregar crédito', 'error');
+    return;
+  }
 
-  // Si es el usuario actual, actualizar UI
-  if (userId === currentUser?.id) {
-    currentWallet.balance = newBal;
+  // Si es el usuario actual, actualizar saldo en UI
+  if (userId === currentUser?.id && data?.balance !== undefined) {
+    currentWallet.balance = data.balance;
     syncBalanceUI();
   }
 
   closeModal();
-  toast(`+$${amount.toFixed(2)} agregado ✓`, 'success');
+  toast(`+$${amount.toFixed(2)} MXN agregado ✓`, 'success');
   loadAdminUsers();
 }
 
