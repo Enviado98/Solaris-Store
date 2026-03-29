@@ -249,7 +249,180 @@ async function handleLogin(user) {
 
     syncBalanceUI();
     if (savedView === 'account') renderAccountView();
+
+    // ── Verificar perfil completo (nombre, apellido, username) ──
+    const needsProfile = !profile?.first_name || !profile?.last_name || !profile?.username;
+    if (needsProfile) showCompleteProfileModal();
   });
+}
+
+// ══════════════════════════════════════════════════
+//  COMPLETE PROFILE MODAL (bloqueante, primer login)
+// ══════════════════════════════════════════════════
+let _cpUsernameTimer = null;
+
+function showCompleteProfileModal() {
+  // Crear overlay bloqueante independiente del modal genérico
+  let overlay = document.getElementById('cp-overlay');
+  if (overlay) return; // ya visible
+
+  overlay = document.createElement('div');
+  overlay.id = 'cp-overlay';
+  overlay.innerHTML = `
+    <div class="cp-box">
+      <div class="cp-header">
+        <span class="cp-emoji">👤</span>
+        <h3 class="cp-title">Completa tu perfil</h3>
+        <p class="cp-sub">Solo se hace una vez. Necesitamos tus datos para identificarte.</p>
+      </div>
+
+      <div class="cp-fields">
+        <div class="cp-row">
+          <div class="cp-field">
+            <label class="cp-label">Nombre</label>
+            <input id="cp-first" class="input" type="text" maxlength="40"
+              placeholder="Ej. Ana" autocomplete="given-name"/>
+          </div>
+          <div class="cp-field">
+            <label class="cp-label">Apellido</label>
+            <input id="cp-last" class="input" type="text" maxlength="40"
+              placeholder="Ej. López" autocomplete="family-name"/>
+          </div>
+        </div>
+
+        <div class="cp-field">
+          <label class="cp-label">@usuario</label>
+          <input id="cp-username" class="input" type="text" maxlength="20"
+            placeholder="letras, números, puntos y _" autocomplete="off" spellcheck="false"/>
+          <span id="cp-username-fb" class="acct-user-feedback"></span>
+        </div>
+      </div>
+
+      <div id="cp-error" class="dep-error" style="display:none">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        <span id="cp-error-text"></span>
+      </div>
+
+      <button id="cp-save-btn" class="dep-pay-btn">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        <span>Guardar y continuar</span>
+      </button>
+    </div>`;
+  document.body.appendChild(overlay);
+
+  // Pre-rellenar si ya hay datos parciales
+  if (currentProfile?.first_name)
+    document.getElementById('cp-first').value = currentProfile.first_name;
+  if (currentProfile?.last_name)
+    document.getElementById('cp-last').value = currentProfile.last_name;
+  if (currentProfile?.username)
+    document.getElementById('cp-username').value = currentProfile.username;
+
+  // Validación en tiempo real del @usuario (reutiliza lógica existente)
+  document.getElementById('cp-username').addEventListener('input', () => {
+    const fb  = document.getElementById('cp-username-fb');
+    const val = document.getElementById('cp-username').value.trim().toLowerCase();
+    clearTimeout(_cpUsernameTimer);
+    if (!val) { fb.textContent = ''; fb.className = 'acct-user-feedback'; return; }
+    if (val === (currentProfile?.username || '').toLowerCase()) {
+      fb.textContent = '✓ Tu username actual'; fb.className = 'acct-user-feedback ok'; return;
+    }
+    if (!/^[a-z0-9._]{3,20}$/.test(val)) {
+      fb.textContent = 'Solo letras, números, puntos y _ (3-20 caracteres)';
+      fb.className = 'acct-user-feedback error'; return;
+    }
+    fb.textContent = 'Verificando...'; fb.className = 'acct-user-feedback checking';
+    _cpUsernameTimer = setTimeout(() => checkUsernameAvailable(val, fb), 500);
+  });
+
+  document.getElementById('cp-save-btn').addEventListener('click', _saveCompleteProfile);
+}
+
+async function _saveCompleteProfile() {
+  const firstName = document.getElementById('cp-first').value.trim();
+  const lastName  = document.getElementById('cp-last').value.trim();
+  const username  = document.getElementById('cp-username').value.trim().toLowerCase();
+  const fb        = document.getElementById('cp-username-fb');
+  const errEl     = document.getElementById('cp-error');
+  const errText   = document.getElementById('cp-error-text');
+  const btn       = document.getElementById('cp-save-btn');
+
+  function showErr(msg) {
+    errText.textContent = msg;
+    errEl.style.display = 'flex';
+  }
+  errEl.style.display = 'none';
+
+  // Validar nombre y apellido
+  if (firstName.length < 2) return showErr('El nombre debe tener al menos 2 caracteres.');
+  if (lastName.length < 2)  return showErr('El apellido debe tener al menos 2 caracteres.');
+  if (!/^[a-záéíóúüñA-ZÁÉÍÓÚÜÑ\s'-]{2,40}$/.test(firstName))
+    return showErr('El nombre solo puede contener letras.');
+  if (!/^[a-záéíóúüñA-ZÁÉÍÓÚÜÑ\s'-]{2,40}$/.test(lastName))
+    return showErr('El apellido solo puede contener letras.');
+
+  // Validar username
+  if (!username) return showErr('Elige un @usuario.');
+  if (!/^[a-z0-9._]{3,20}$/.test(username))
+    return showErr('Username: solo letras, números, puntos y _ (3-20 caracteres).');
+
+  // Verificar disponibilidad si cambió
+  const currentUsername = (currentProfile?.username || '').toLowerCase();
+  if (username !== currentUsername) {
+    btn.disabled = true;
+    btn.querySelector('span').textContent = 'Verificando...';
+    try {
+      const timeout = new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 6000));
+      const res = await Promise.race([db.rpc('check_username', { p_username: username }), timeout]);
+      if (!res.data?.available) {
+        showErr('Ese @usuario ya está en uso, elige otro.');
+        btn.disabled = false;
+        btn.querySelector('span').textContent = 'Guardar y continuar';
+        return;
+      }
+    } catch {
+      showErr('Sin conexión — intenta de nuevo.');
+      btn.disabled = false;
+      btn.querySelector('span').textContent = 'Guardar y continuar';
+      return;
+    }
+  }
+
+  btn.disabled = true;
+  btn.querySelector('span').textContent = 'Guardando...';
+
+  const payload = {
+    first_name: firstName,
+    last_name:  lastName,
+    username,
+  };
+  if (username !== currentUsername) payload.username_changed_at = new Date().toISOString();
+
+  const { error } = await db.from('profiles').update(payload).eq('id', currentUser.id);
+
+  if (error) {
+    btn.disabled = false;
+    btn.querySelector('span').textContent = 'Guardar y continuar';
+    const msg = error.message?.includes('idx_profiles_username')
+      ? 'Ese @usuario ya está en uso, elige otro.'
+      : 'Error al guardar. Intenta de nuevo.';
+    showErr(msg);
+    return;
+  }
+
+  // Actualizar perfil en memoria y caché
+  if (currentProfile) {
+    currentProfile.first_name = firstName;
+    currentProfile.last_name  = lastName;
+    currentProfile.username   = username;
+    if (payload.username_changed_at) currentProfile.username_changed_at = payload.username_changed_at;
+    CACHE.set('profile_' + currentUser.id, currentProfile);
+  }
+
+  // Cerrar overlay y refrescar vista
+  document.getElementById('cp-overlay')?.remove();
+  renderAccountView();
+  toast('¡Perfil completado! Bienvenido/a 🎉', 'success');
 }
 
 // ── Logout screen helpers
@@ -1600,7 +1773,14 @@ function initAccountListeners() {
         const { error, paymentIntent } = await stripe.confirmOxxoPayment(data.client_secret, {
           payment_method: {
             billing_details: {
-              name:  currentProfile?.username || 'Cliente Solaris',
+              name: (() => {
+                const first = (currentProfile?.first_name || '').trim();
+                const last  = (currentProfile?.last_name  || '').trim();
+                if (first.length >= 2 && last.length >= 2) return `${first} ${last}`;
+                const raw = (currentProfile?.username || '').trim();
+                if (raw.length >= 2) return `${raw} MX`;
+                return 'Cliente Solaris';
+              })(),
               email: currentUser.email,
             }
           }

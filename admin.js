@@ -339,7 +339,7 @@ function renderUsers() {
 
 function openCreditModal(userId, userName) {
   showModal(`Agregar crédito — ${userName}`,
-    `<input type="number" id="credit-amount" placeholder="Monto en USD" class="input" step="0.01" min="0.01" style="margin-bottom:10px">
+    `<input type="number" id="credit-amount" placeholder="Monto en MXN" class="input" step="0.01" min="0.01" style="margin-bottom:10px">
      <input type="text"   id="credit-note"   placeholder="Nota (ej: Pago WA #12)" class="input">
      <div class="modal-actions">
        <button class="btn btn-neutral" onclick="closeModal()">Cancelar</button>
