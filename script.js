@@ -1548,20 +1548,33 @@ function initAccountListeners() {
 
     try {
       // 1. Crear PaymentIntent en Supabase Edge Function
-      const res = await fetch(`${SUPABASE_URL}/functions/v1/create-payment`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
-          'apikey': SUPABASE_ANON_KEY,
-        },
-        body: JSON.stringify({
-          amount:  _depAmount,
-          method:  _depMethod,
-          user_id: currentUser.id,
-          email:   currentUser.email,
-        }),
-      });
+      const controller = new AbortController();
+      const timeoutId  = setTimeout(() => controller.abort(), 12000);
+
+      let res;
+      try {
+        res = await fetch(`${SUPABASE_URL}/functions/v1/create-payment`, {
+          method: 'POST',
+          signal: controller.signal,
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+            'apikey': SUPABASE_ANON_KEY,
+          },
+          body: JSON.stringify({
+            amount:  _depAmount,
+            method:  _depMethod,
+            user_id: currentUser.id,
+            email:   currentUser.email,
+          }),
+        });
+      } catch (fetchErr) {
+        if (fetchErr.name === 'AbortError') throw new Error('Sin respuesta del servidor — verifica tu conexión e intenta de nuevo.');
+        throw new Error('Error de conexión — intenta de nuevo.');
+      } finally {
+        clearTimeout(timeoutId);
+      }
+
       const data = await res.json();
       if (data.error) throw new Error(data.error);
 
@@ -1583,8 +1596,8 @@ function initAccountListeners() {
         }
 
       } else {
-        // 2b. OXXO — genera cupón automáticamente
-        const { error } = await stripe.confirmOxxoPayment(data.client_secret, {
+        // 2b. OXXO — genera cupón y muestra en pantalla
+        const { error, paymentIntent } = await stripe.confirmOxxoPayment(data.client_secret, {
           payment_method: {
             billing_details: {
               name:  currentProfile?.username || 'Cliente Solaris',
@@ -1595,8 +1608,12 @@ function initAccountListeners() {
         if (error && error.type !== 'payment_intent_unexpected_state') {
           throw new Error(error.message);
         }
+
+        // Obtener URL del voucher desde el paymentIntent
+        const voucherUrl = paymentIntent?.next_action?.oxxo_display_details?.hosted_voucher_url || null;
+
         closeModal();
-        toast('🏪 Cupón OXXO generado. Paga en tienda y tu saldo se acreditará en ~1 hora.', 'success');
+        _showOxxoVoucher(_depAmount, voucherUrl);
       }
 
     } catch (err) {
@@ -1606,6 +1623,24 @@ function initAccountListeners() {
       btn.disabled = false;
       btn.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg><span id="dep-pay-label">Pagar $${_depAmount} MXN</span>`;
     }
+  }
+
+  function _showOxxoVoucher(amount, voucherUrl) {
+    const html = `<div class="oxxo-voucher-wrap">
+      <div class="oxxo-voucher-icon">🏪</div>
+      <p class="oxxo-voucher-title">¡Cupón generado!</p>
+      <p class="oxxo-voucher-sub">Paga <strong>$${amount} MXN</strong> en cualquier OXXO antes de <strong>3 días</strong>.<br>Tu saldo se acreditará en ~1 hora tras el pago.</p>
+      ${voucherUrl
+        ? `<a href="${voucherUrl}" target="_blank" rel="noopener" class="oxxo-voucher-btn">
+             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+             Ver cupón de pago
+           </a>`
+        : `<p class="oxxo-voucher-email">El cupón fue enviado a <strong>${currentUser?.email || 'tu correo'}</strong>.</p>`
+      }
+      <p class="oxxo-voucher-note">También recibirás el cupón por correo electrónico.</p>
+      <button class="oxxo-voucher-close" onclick="closeModal()">Entendido</button>
+    </div>`;
+    showModal('Pago OXXO', html);
   }
 
   document.getElementById('acct-deposit-btn')?.addEventListener('click', showDepositModal);

@@ -2519,3 +2519,71 @@ textarea.input { resize: vertical; min-height: 80px; }
   flex-shrink: 0;
 }
 @keyframes dep-spin { to { transform: rotate(360deg); } }
+
+/* OXXO Voucher modal */
+.oxxo-voucher-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 8px 4px 4px;
+  gap: 10px;
+}
+.oxxo-voucher-icon { font-size: 2.2rem; line-height: 1; }
+.oxxo-voucher-title {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--text);
+  margin: 0;
+}
+.oxxo-voucher-sub {
+  font-size: 0.83rem;
+  color: var(--text-dim);
+  line-height: 1.55;
+  margin: 0;
+}
+.oxxo-voucher-sub strong { color: var(--text); font-weight: 600; }
+.oxxo-voucher-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  background: linear-gradient(90deg, var(--gold-dim), var(--gold));
+  color: #fff;
+  font-size: 0.85rem;
+  font-weight: 600;
+  padding: 10px 20px;
+  border-radius: 9px;
+  text-decoration: none;
+  transition: opacity 0.18s;
+}
+.oxxo-voucher-btn:hover { opacity: 0.88; }
+.oxxo-voucher-email {
+  font-size: 0.8rem;
+  color: var(--text-dim);
+  margin: 0;
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 8px 12px;
+}
+.oxxo-voucher-email strong { color: var(--text); }
+.oxxo-voucher-note {
+  font-size: 0.75rem;
+  color: var(--text-dim);
+  margin: 0;
+  opacity: 0.8;
+}
+.oxxo-voucher-close {
+  width: 100%;
+  padding: 11px;
+  border: 1.5px solid var(--border);
+  border-radius: 9px;
+  background: transparent;
+  color: var(--text-dim);
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+  margin-top: 2px;
+}
+.oxxo-voucher-close:hover { background: var(--bg2); color: var(--text); }
