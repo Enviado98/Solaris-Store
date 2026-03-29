@@ -285,6 +285,19 @@ select.input-search {
   gap: 12px;
   margin-bottom: 12px;
 }
+.input-label-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.input-label {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding-left: 2px;
+}
 .input {
   width: 100%;
   background: var(--bg3);

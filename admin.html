@@ -146,8 +146,11 @@
             <option value="Windows11">Windows 11</option>
             <option value="Windows10">Windows 10</option>
           </select>
-          <input type="number" class="input" id="ap-price"    placeholder="Precio (USD)" step="0.01" min="0"/>
-          <input type="number" class="input" id="ap-duration" placeholder="Duración (días)" value="30" min="1"/>
+          <input type="number" class="input" id="ap-price"    placeholder="Precio base/30 días (USD)" step="0.01" min="0"/>
+          <div class="input-label-wrap">
+            <label class="input-label" for="ap-expires">Fecha de expiración</label>
+            <input type="datetime-local" class="input" id="ap-expires"/>
+          </div>
         </div>
         <textarea class="input form-full" id="ap-desc" placeholder="Descripción (opcional)"></textarea>
         <textarea class="input form-full" id="ap-account" placeholder="Datos de acceso (opcional — ej: usuario:contraseña)" style="margin-top:10px"></textarea>

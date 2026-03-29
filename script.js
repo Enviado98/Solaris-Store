@@ -125,6 +125,27 @@ const CACHE = {
 let currentCat     = 'all';
 let cart           = JSON.parse(localStorage.getItem('solaris_cart') || '[]');
 
+// ─── Precio proporcional por días restantes ─────
+function daysRemaining(expiresAt) {
+  if (!expiresAt) return 0;
+  const diff = new Date(expiresAt) - Date.now();
+  return Math.max(0, Math.ceil(diff / 86400000));
+}
+function calcPrice(basePrice, expiresAt) {
+  const days = daysRemaining(expiresAt);
+  if (days <= 0) return 0;
+  const raw = (days / 30) * parseFloat(basePrice);
+  return Math.round(raw * 100) / 100;
+}
+function daysLabel(days) {
+  if (days <= 0) return 'Expirado';
+  if (days === 1) return '1 día';
+  return `${days} días`;
+}
+function daysPercent(days) {
+  return Math.min(100, Math.round((days / 30) * 100));
+}
+
 // ─── Caché del historial ────────────────────────
 // Se carga una vez y se reutiliza. Se invalida solo al hacer una compra.
 const _histCache = { orders: null, movs: null };
@@ -542,11 +563,26 @@ async function loadProducts() {
   if (!allProducts.length) showProductsSkeleton();
 
   const { data, error } = await db
-    .from('products').select('*')
+    .from('accounts').select('*')
     .eq('is_active', true)
-    .order('created_at', { ascending: false });
+    .gt('expires_at', new Date().toISOString())
+    .order('expires_at', { ascending: true });
 
-  if (error) { console.error(error); return; }
+  if (error) {
+    // Fallback a tabla products si accounts no existe aún
+    const { data: fallback, error: e2 } = await db
+      .from('products').select('*').eq('is_active', true).order('created_at', { ascending: false });
+    if (e2) { console.error(e2); return; }
+    allProducts = (fallback || []).map(p => ({
+      ...p,
+      base_price: p.price,
+      expires_at: null,
+      _legacy: true,
+    }));
+    CACHE.set('products', allProducts);
+    renderProducts();
+    return;
+  }
   allProducts = data || [];
   CACHE.set('products', allProducts);
   renderProducts();
@@ -582,7 +618,6 @@ function openProductsPanel() {
 
 function renderProducts() {
   const grid = document.getElementById('products-grid');
-  // currentCat puede ser: svc key (ej "Netflix"), categoría genérica (ej "Streaming"), o "all"
   const genericCats = ['Streaming', 'Musica', 'Gaming', 'Software', 'Internet'];
   const list = currentCat === 'all'
     ? allProducts
@@ -591,27 +626,43 @@ function renderProducts() {
       : allProducts.filter(p => p.service === currentCat);
 
   if (!list.length) {
-    grid.innerHTML = '<div class="no-items">Sin productos disponibles</div>';
+    grid.innerHTML = '<div class="no-items">Sin cuentas disponibles</div>';
     return;
   }
 
   grid.innerHTML = list.map(p => {
-    const svcIcon = SVC_ICON[p.service];
+    const svcIcon  = SVC_ICON[p.service];
     const catStyle = CAT_STYLE[p.category] || CAT_STYLE.Streaming;
     const iconHtml = svcIcon
       ? `<span class="iconify product-svc-icon" data-icon="${svcIcon.icon}" style="color:${svcIcon.color}"></span>`
       : `<span class="iconify product-svc-icon" data-icon="${catStyle.icon}" style="color:${catStyle.accent}"></span>`;
+
+    const days     = p._legacy ? (p.duration_days || 30) : daysRemaining(p.expires_at);
+    const dynPrice = p._legacy ? parseFloat(p.price) : calcPrice(p.base_price, p.expires_at);
+    const pct      = p._legacy ? 100 : daysPercent(days);
+    const barColor = pct > 60 ? '#22c55e' : pct > 30 ? '#f59e0b' : '#ef4444';
+
     return `
-      <div class="product-card">
-        <div class="product-icon-wrap" style="--cat-accent:${catStyle.accent}">
-          ${iconHtml}
+      <div class="product-card" data-id="${p.id}">
+        <div class="product-card-top" style="--cat-accent:${catStyle.accent}">
+          <div class="product-icon-wrap" style="--cat-accent:${catStyle.accent}">
+            ${iconHtml}
+          </div>
+          <div class="product-badge-days" style="background:${barColor}22;color:${barColor}">
+            ${daysLabel(days)}
+          </div>
         </div>
         <div class="product-name">${esc(p.name)}</div>
         ${p.description ? `<div class="product-desc">${esc(p.description)}</div>` : ''}
+        <div class="product-progress-wrap">
+          <div class="product-progress-track">
+            <div class="product-progress-bar" style="width:${pct}%;background:${barColor}"></div>
+          </div>
+        </div>
         <div class="product-footer">
           <div class="product-price-block">
-            <div class="product-price">$${price(p.price)}</div>
-            <div class="product-days">${p.duration_days}d</div>
+            <div class="product-price">$${price(dynPrice)}</div>
+            ${!p._legacy ? `<div class="product-days">Base $${price(p.base_price)}/30d</div>` : `<div class="product-days">${days}d</div>`}
           </div>
           <button class="btn-add-cart" onclick="addToCart('${p.id}')">+ Carrito</button>
         </div>
@@ -639,7 +690,10 @@ function saveCart() { localStorage.setItem('solaris_cart', JSON.stringify(cart))
 
 function renderCart() {
   const items = cart.map(c => allProducts.find(p => p.id === c.id)).filter(Boolean);
-  const total = items.reduce((s, p) => s + parseFloat(p.price), 0);
+  const total = items.reduce((s, p) => {
+    const dynP = p._legacy ? parseFloat(p.price) : calcPrice(p.base_price, p.expires_at);
+    return s + dynP;
+  }, 0);
   const balance = parseFloat(currentWallet?.balance || 0);
 
   const elItems   = document.getElementById('cart-items');
@@ -656,16 +710,19 @@ function renderCart() {
   elEmpty.classList.add('hidden');
   elSummary.classList.remove('hidden');
 
-  elItems.innerHTML = items.map(p => `
+  elItems.innerHTML = items.map(p => {
+    const days    = p._legacy ? (p.duration_days || 30) : daysRemaining(p.expires_at);
+    const dynPrice = p._legacy ? parseFloat(p.price) : calcPrice(p.base_price, p.expires_at);
+    return `
     <div class="cart-item">
       <div class="cart-item-info">
         <div class="cart-item-name">${esc(p.name)}</div>
-        <div class="cart-item-sub">${p.category} · ${p.duration_days} días</div>
+        <div class="cart-item-sub">${p.category} · ${days} días</div>
       </div>
-      <div class="cart-item-price">$${price(p.price)}</div>
+      <div class="cart-item-price">$${price(dynPrice)}</div>
       <button class="btn-remove" onclick="removeFromCart('${p.id}')" title="Quitar">✕</button>
-    </div>`
-  ).join('');
+    </div>`;
+  }).join('');
 
   const remaining = balance - total;
   document.getElementById('summary-balance').textContent   = `$${price(balance)}`;
@@ -684,7 +741,10 @@ function renderCart() {
 
 async function doCheckout() {
   const items   = cart.map(c => allProducts.find(p => p.id === c.id)).filter(Boolean);
-  const total   = items.reduce((s, p) => s + parseFloat(p.price), 0);
+  const total   = items.reduce((s, p) => {
+    const dynP = p._legacy ? parseFloat(p.price) : calcPrice(p.base_price, p.expires_at);
+    return s + dynP;
+  }, 0);
   const balance = parseFloat(currentWallet?.balance || 0);
 
   if (balance < total) return toast('Saldo insuficiente', 'error');
@@ -725,51 +785,77 @@ async function doCheckout() {
 // ══════════════════════════════════════════════════
 async function loadAdminProducts() {
   if (!currentProfile?.is_admin) return;
-  const { data } = await db.from('products').select('*').order('created_at', { ascending: false });
+  const { data, error } = await db.from('accounts').select('*').order('expires_at', { ascending: true });
+
+  // Fallback to products table if accounts doesn't exist yet
+  if (error) {
+    const { data: fallback } = await db.from('products').select('*').order('created_at', { ascending: false });
+    renderAdminProductsList(fallback || [], true);
+    return;
+  }
+  renderAdminProductsList(data || [], false);
+}
+
+function renderAdminProductsList(data, legacy) {
   const el = document.getElementById('admin-products-list');
+  if (!data?.length) { el.innerHTML = '<div class="no-items">Sin cuentas aún</div>'; return; }
 
-  if (!data?.length) { el.innerHTML = '<div class="no-items">Sin productos aún</div>'; return; }
-
-  el.innerHTML = data.map(p => `
+  el.innerHTML = data.map(p => {
+    const days = legacy ? (p.duration_days || 30) : daysRemaining(p.expires_at);
+    const dynPrice = legacy ? parseFloat(p.price) : calcPrice(p.base_price, p.expires_at);
+    const pct = legacy ? 100 : daysPercent(days);
+    const barColor = pct > 60 ? '#22c55e' : pct > 30 ? '#f59e0b' : '#ef4444';
+    const expiryStr = legacy ? `${days}d` : `${daysLabel(days)} restantes`;
+    return `
     <div class="admin-item">
       <div class="admin-item-info">
-        <div class="admin-item-name">${CAT_EMOJI[p.category]||'⭐'} ${esc(p.name)} — <span style="color:var(--gold)">$${price(p.price)}</span></div>
-        <div class="admin-item-meta">${p.category} · ${p.duration_days}d · ${p.is_active ? '✅ Activo' : '❌ Inactivo'}</div>
+        <div class="admin-item-name">${CAT_EMOJI[p.category]||'⭐'} ${esc(p.name)} — <span style="color:${barColor}">$${price(dynPrice)}</span></div>
+        <div class="admin-item-meta">${p.category} · ${expiryStr} · ${p.is_active ? '✅ Activo' : '❌ Inactivo'}</div>
+        <div style="margin-top:4px;height:4px;background:#eee;border-radius:2px;overflow:hidden">
+          <div style="height:100%;width:${pct}%;background:${barColor};border-radius:2px;transition:width 0.4s"></div>
+        </div>
       </div>
       <div class="admin-item-actions">
-        <button class="btn-toggle" onclick="toggleProduct('${p.id}', ${p.is_active})">
+        <button class="btn-toggle" onclick="toggleProduct('${p.id}', ${p.is_active}, ${legacy})">
           ${p.is_active ? 'Desactivar' : 'Activar'}
         </button>
       </div>
-    </div>`
-  ).join('');
+    </div>`;
+  }).join('');
 }
 
-async function toggleProduct(id, active) {
-  await db.from('products').update({ is_active: !active }).eq('id', id);
+async function toggleProduct(id, active, legacy = false) {
+  const table = legacy ? 'products' : 'accounts';
+  await db.from(table).update({ is_active: !active }).eq('id', id);
   loadAdminProducts(); loadProducts();
 }
 
 async function addProduct() {
   const name     = val('ap-name');
   const category = val('ap-category');
+  const service  = val('ap-service') || null;
   const desc     = val('ap-desc');
   const prc      = parseFloat(document.getElementById('ap-price').value);
-  const days     = parseInt(document.getElementById('ap-duration').value) || 30;
+  const expires  = document.getElementById('ap-expires').value;
   const account  = val('ap-account');
 
   if (!name || !category || !prc) return setMsg('ap-msg', 'Nombre, categoría y precio son requeridos', 'error');
+  if (!expires) return setMsg('ap-msg', 'La fecha de expiración es requerida', 'error');
 
-  const { error } = await db.from('products').insert({
-    name, category, description: desc, price: prc,
-    duration_days: days, account_data: account, is_active: true
+  const expiresISO = new Date(expires).toISOString();
+
+  const { error } = await db.from('accounts').insert({
+    name, category, service, description: desc,
+    base_price: prc, expires_at: expiresISO,
+    account_data: account, is_active: true
   });
 
   if (error) return setMsg('ap-msg', 'Error al guardar: ' + error.message, 'error');
 
-  setMsg('ap-msg', '¡Producto agregado! ✓', 'success');
-  ['ap-name','ap-desc','ap-price','ap-account'].forEach(id => document.getElementById(id).value = '');
-  document.getElementById('ap-duration').value = '30';
+  setMsg('ap-msg', '¡Cuenta agregada! ✓', 'success');
+  ['ap-name','ap-desc','ap-account'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('ap-price').value = '';
+  document.getElementById('ap-expires').value = '';
   loadProducts(); loadAdminProducts();
 }
 
