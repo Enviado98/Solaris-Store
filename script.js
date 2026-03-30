@@ -515,17 +515,6 @@ function openNavPanel() {
   document.getElementById('nav-menu-btn').classList.add('open');
   document.getElementById('navbar').classList.add('panel-open');
   document.body.style.overflow = 'hidden';
-
-  // Backdrop
-  let bd = document.getElementById('nav-panel-backdrop');
-  if (!bd) {
-    bd = document.createElement('div');
-    bd.id = 'nav-panel-backdrop';
-    bd.className = 'nav-panel-backdrop';
-    bd.addEventListener('click', closeNavPanel);
-    document.body.appendChild(bd);
-  }
-  requestAnimationFrame(() => bd.classList.add('visible'));
 }
 function closeNavPanel() {
   document.getElementById('nav-panel').classList.remove('open');
@@ -533,12 +522,6 @@ function closeNavPanel() {
   const btn = document.getElementById('nav-menu-btn');
   if (btn) btn.classList.remove('open');
   document.body.style.overflow = '';
-
-  const bd = document.getElementById('nav-panel-backdrop');
-  if (bd) {
-    bd.classList.remove('visible');
-    setTimeout(() => bd.remove(), 340);
-  }
 }
 function toggleNavPanel() {
   const panel = document.getElementById('nav-panel');

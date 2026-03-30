@@ -2893,17 +2893,7 @@ textarea.input { resize: vertical; min-height: 80px; }
 
 /* Backdrop detrás del panel (semitransparente) */
 .nav-panel-backdrop {
-  position: fixed;
-  inset: 0;
-  top: var(--nav-h);
-  background: rgba(0,0,0,0);
-  z-index: 798;
-  pointer-events: none;
-  transition: background 0.32s ease;
-}
-.nav-panel-backdrop.visible {
-  background: rgba(0,0,0,0.32);
-  pointer-events: all;
+  display: none !important; /* panel es fullscreen, no necesita backdrop */
 }
 
 .nav-panel-fullscreen .nav-panel-inner {
@@ -2914,12 +2904,9 @@ textarea.input { resize: vertical; min-height: 80px; }
   flex-direction: column;
 }
 
-/* Header del panel */
+/* Header del panel - oculto, la navbar ya muestra el logo */
 .nav-panel-fullscreen-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 22px 20px 16px;
+  display: none;
 }
 .nav-panel-fullscreen-logo {
   display: flex;
@@ -2947,7 +2934,7 @@ textarea.input { resize: vertical; min-height: 80px; }
 
 /* Body del panel */
 .nav-panel-fullscreen-body {
-  padding: 4px 16px 40px;
+  padding: 16px 16px 40px;
   display: flex;
   flex-direction: column;
   gap: 0;
