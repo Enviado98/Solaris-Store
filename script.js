@@ -1242,9 +1242,8 @@ function showView(name) {
 }
 
 function showAuthView() {
-  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
-  document.getElementById('view-auth').classList.add('active');
-  document.getElementById('navbar').style.display = 'none';
+  // Ya no usamos view-auth — abrimos el overlay de login directamente
+  openLoginOverlay('login');
 }
 
 // ── Muestra el catálogo sin requerir login ──────────
@@ -2514,3 +2513,4 @@ function showProductsSkeleton() {
 }
 
 // ── SWIPE ENTRE VISTAS: eliminado (conflicto con carrusel de tienda) ──
+
