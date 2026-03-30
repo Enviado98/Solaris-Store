@@ -43,49 +43,6 @@ body::before {
 }
 
 /* ── LOADER ───────────────────────────────────── */
-#loader {
-  position: fixed; inset: 0;
-  background: var(--bg);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 9999;
-  transition: opacity 0.45s;
-}
-.loader-inner { text-align: center; }
-.loader-hex {
-  color: var(--gold);
-  animation: hexPulse 1.6s ease-in-out infinite;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-bottom: 10px;
-}
-.loader-hex svg { width: 48px; height: 48px; }
-.loader-logo {
-  font-family: 'Rajdhani', sans-serif;
-  font-weight: 900;
-  font-size: 1.8rem;
-  color: var(--gold);
-  letter-spacing: 0.22em;
-  margin-bottom: 24px;
-}
-.loader-bar {
-  width: 160px;
-  height: 2px;
-  background: var(--border);
-  border-radius: 2px;
-  overflow: hidden;
-  margin: 0 auto;
-}
-.loader-progress {
-  height: 100%;
-  background: linear-gradient(90deg, var(--gold-dim), var(--gold));
-  animation: loadBar 1.3s ease-in-out forwards;
-}
-@keyframes loadBar  { from { width: 0 } to { width: 100% } }
-@keyframes hexPulse { 0%,100% { opacity: 1; transform: scale(1) } 50% { opacity: 0.5; transform: scale(0.92) } }
-
 /* ── UTILS ────────────────────────────────────── */
 .hidden { display: none !important; }
 #app { position: relative; z-index: 1; min-height: 100vh; }

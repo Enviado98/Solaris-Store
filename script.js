@@ -153,20 +153,16 @@ const _histCache = { orders: null, movs: null };
 //  INIT
 // ══════════════════════════════════════════════════
 window.addEventListener('DOMContentLoaded', async () => {
+  // Sin pantalla de carga — mostrar app directamente
+  const loader = document.getElementById('loader');
+  if (loader) loader.style.display = 'none';
+  document.getElementById('app').classList.remove('hidden');
+
   try {
-    // Resolve session before showing any UI (prevents flash of login screen)
     const { data: { session } } = await db.auth.getSession();
 
-    // Boot animation
-    await sleep(1350);
-    fadeOut(document.getElementById('loader'));
-    await sleep(420);
-    document.getElementById('loader').style.display = 'none';
-
-    // Now show app with the correct view already determined
     if (session) await handleLogin(session.user);
     else showGuestCatalog();
-    document.getElementById('app').classList.remove('hidden');
 
     db.auth.onAuthStateChange(async (event, session) => {
       if (event === 'SIGNED_IN')  await handleLogin(session.user);
@@ -175,10 +171,7 @@ window.addEventListener('DOMContentLoaded', async () => {
 
     setupEvents();
   } catch (err) {
-    // Si algo falla, ocultar loader y mostrar catalogo de todas formas
     console.error('Boot error:', err);
-    document.getElementById('loader').style.display = 'none';
-    document.getElementById('app').classList.remove('hidden');
     showGuestCatalog();
     setupEvents();
   }
@@ -1517,8 +1510,7 @@ function syncCartCount() {
 function val(id)         { return document.getElementById(id)?.value.trim() || ''; }
 function price(n)        { return parseFloat(n||0).toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
 function esc(str)        { return String(str||'').replace(/[<>"'&]/g,c=>({'<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;','&':'&amp;'}[c])); }
-function sleep(ms)       { return new Promise(r => setTimeout(r, ms)); }
-function fadeOut(el)     { el.style.cssText += 'opacity:0;transition:opacity 0.4s'; }
+
 function setBtn(id, txt) { const b = document.getElementById(id); if(b){ b.textContent=txt; b.disabled=txt!=='Entrar'&&txt!=='Crear cuenta'; } }
 function setMsg(id, msg, type) { const el = document.getElementById(id); if(el){ el.textContent=msg; el.className=`auth-msg ${type}`; } }
 function clearMsg(id)          { setMsg(id, '', ''); }
