@@ -323,7 +323,7 @@ body::before {
 /* ── MAIN ─────────────────────────────────────── */
 #main {
   padding-top: var(--nav-h);
-  padding-bottom: var(--bot-h);
+  padding-bottom: 32px;
   min-height: 100vh;
 }
 
@@ -1144,83 +1144,6 @@ textarea.input { resize: vertical; min-height: 80px; }
 .input-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 
 /* ── BOTTOM NAV ───────────────────────────────── */
-#bottom-nav {
-  position: fixed;
-  bottom: 0; left: 0; right: 0;
-  height: var(--bot-h);
-  display: flex;
-  align-items: flex-end;
-  justify-content: center;
-  padding-bottom: 14px;
-  z-index: 100;
-  pointer-events: none;
-}
-#bottom-nav.hidden { display: none; }
-
-/* La cápsula pill */
-.bottom-capsule {
-  position: relative;
-  display: flex;
-  align-items: center;
-  gap: 0;
-  background: rgba(245, 200, 80, 0.18);
-  backdrop-filter: blur(18px) saturate(1.6);
-  -webkit-backdrop-filter: blur(18px) saturate(1.6);
-  border: 1.5px solid rgba(194, 122, 0, 0.28);
-  border-radius: 50px;
-  padding: 5px;
-  box-shadow:
-    0 4px 24px rgba(194,122,0,0.14),
-    0 1px 0 rgba(255,255,255,0.6) inset;
-  pointer-events: all;
-}
-
-/* La bolita/pill deslizante — posicionada 100% con CSS */
-.bottom-slider {
-  position: absolute;
-  top: 5px;
-  left: 5px;
-  height: calc(100% - 10px);
-  width: calc((100% - 10px) / 3);
-  border-radius: 40px;
-  background: linear-gradient(135deg, #f59e0b, #c27a00);
-  box-shadow: 0 2px 12px rgba(194,122,0,0.40);
-  transition: left 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
-  pointer-events: none;
-  z-index: 0;
-}
-.bottom-capsule:has(.bottom-btn[data-view="cart"].active) .bottom-slider {
-  left: calc((100% - 10px) / 3 + 5px);
-}
-.bottom-capsule:has(.bottom-btn[data-view="account"].active) .bottom-slider {
-  left: calc((100% - 10px) / 3 * 2 + 5px);
-}
-
-.bottom-btn {
-  position: relative;
-  z-index: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 3px;
-  background: none;
-  border: none;
-  color: rgba(100, 70, 0, 0.55);
-  cursor: pointer;
-  font-family: 'Exo 2', sans-serif;
-  padding: 8px 20px;
-  border-radius: 40px;
-  transition: color 0.2s;
-  min-width: 72px;
-}
-.bottom-icon { display: flex; align-items: center; justify-content: center; line-height: 1; }
-.bottom-btn small { font-size: 0.66rem; font-weight: 600; letter-spacing: 0.01em; }
-.bottom-btn.active {
-  color: #fff;
-}
-
-
 /* WHATSAPP FLOAT */
 
 /* ── MODAL ────────────────────────────────────── */
@@ -1270,7 +1193,7 @@ textarea.input { resize: vertical; min-height: 80px; }
 /* ── TOAST ────────────────────────────────────── */
 #toast {
   position: fixed;
-  bottom: calc(var(--bot-h) + 14px);
+  bottom: 24px;
   left: 50%;
   transform: translateX(-50%) translateY(12px);
   background: var(--bg3);

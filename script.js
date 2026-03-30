@@ -197,7 +197,7 @@ async function handleLogin(user) {
   ['nav-balance', 'nav-logout-btn', 'nav-cart-btn', 'nav-menu-btn', 'nav-account-btn'].forEach(id =>
     document.getElementById(id).classList.remove('hidden')
   );
-  document.getElementById('bottom-nav').classList.remove('hidden');
+  
 
   const savedView = sessionStorage.getItem('solaris_view') || 'catalog';
   showView(savedView);
@@ -477,7 +477,7 @@ function handleLogout() {
   );
   // nav-menu-btn siempre visible para invitados
   closeNavPanel();
-  document.getElementById('bottom-nav').classList.add('hidden');
+  
   showGuestCatalog();
 }
 
@@ -586,25 +586,13 @@ function setupEvents() {
     if (error) setMsg('auth-msg', 'Error al conectar con Google', 'error');
   });
 
-  // ── Bottom nav (funciona para guests también)
-  document.querySelectorAll('.bottom-btn[data-view]').forEach(btn =>
-    btn.addEventListener('click', () => {
-      const view = btn.dataset.view;
-      if (!currentUser && (view === 'cart' || view === 'account')) {
-        openLoginOverlay('login');
-        return;
-      }
-      showView(view);
+  // ── Hamburger / dots menu (siempre visible)
+  document.getElementById('nav-menu-btn').addEventListener('click', (e) => {
+    e.stopPropagation();
     })
   );
 
   // ── Account button (shows info / login for guests)
-  document.getElementById('account-btn').addEventListener('click', () => {
-    if (!currentUser) { openLoginOverlay('login'); return; }
-    showView('account');
-    renderAccountView();
-  });
-
   // ── Hamburger / dots menu (siempre visible)
   document.getElementById('nav-menu-btn').addEventListener('click', (e) => {
     e.stopPropagation();
@@ -1224,23 +1212,15 @@ async function addCredit(userId) {
 // ══════════════════════════════════════════════════
 //  UI HELPERS
 // ══════════════════════════════════════════════════
-function moveBottomSlider(name, instant = false) {
-  // El slider se posiciona por CSS según el botón con clase .active
-  // No se necesita JS aquí
-}
 
 function showView(name) {
   document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
   document.getElementById(`view-${name}`)?.classList.add('active');
-  document.querySelectorAll('.bottom-btn').forEach(b => b.classList.remove('active'));
-  document.querySelector(`.bottom-btn[data-view="${name}"]`)?.classList.add('active');
   document.getElementById('navbar').style.display = '';
-  moveBottomSlider(name);
   sessionStorage.setItem('solaris_view', name);
   if (name === 'cart') renderCart();
   if (name === 'account') {
     initTicker();
-    // Disparar animación pendiente de transfer/recarga si la hay
     if (_pendingNotif) {
       const fn = _pendingNotif;
       _pendingNotif = null;
@@ -1281,10 +1261,6 @@ function showGuestCatalog() {
   document.getElementById('navbar').style.display = '';
   document.getElementById('nav-guest-section')?.classList.remove('hidden');
   document.getElementById('nav-sep-auth')?.classList.add('hidden');
-  document.getElementById('bottom-nav')?.classList.remove('hidden');
-  // Activar solo el tab de tienda
-  document.querySelectorAll('.bottom-btn').forEach(b => b.classList.remove('active'));
-  document.querySelector('.bottom-btn[data-view="catalog"]')?.classList.add('active');
   loadProducts();
   sessionStorage.setItem('solaris_view', 'catalog');
 }
